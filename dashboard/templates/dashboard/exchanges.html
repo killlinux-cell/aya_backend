@@ -1,0 +1,179 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Dashboard - Gestion Échanges{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-exchange-alt"></i> Gestion des Échanges</h1>
+    <p>Gérer les demandes d'échange de points</p>
+</div>
+
+<!-- Filtres -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            <div class="col-md-6">
+                <select class="form-select" name="status">
+                    <option value="all" {% if status_filter == 'all' %}selected{% endif %}>Tous les statuts</option>
+                    <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>En attente</option>
+                    <option value="approved" {% if status_filter == 'approved' %}selected{% endif %}>Approuvés</option>
+                    <option value="rejected" {% if status_filter == 'rejected' %}selected{% endif %}>Rejetés</option>
+                    <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Complétés</option>
+                </select>
+            </div>
+            <div class="col-md-6">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-filter"></i> Filtrer
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Liste des échanges -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Demandes d'Échange ({{ page_obj.paginator.count }} total)</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Utilisateur</th>
+                        <th>Points</th>
+                        <th>Code Échange</th>
+                        <th>Statut</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for exchange in page_obj %}
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="avatar-circle me-3">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                <div>
+                                    <strong>{{ exchange.user.full_name }}</strong>
+                                    <br>
+                                    <small class="text-muted">{{ exchange.user.email }}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge bg-primary">{{ exchange.points }} points</span>
+                        </td>
+                        <td>
+                            <code>{{ exchange.exchange_code }}</code>
+                        </td>
+                        <td>
+                            {% if exchange.status == 'pending' %}
+                                <span class="badge bg-warning">En attente</span>
+                            {% elif exchange.status == 'approved' %}
+                                <span class="badge bg-info">Approuvé</span>
+                            {% elif exchange.status == 'rejected' %}
+                                <span class="badge bg-danger">Rejeté</span>
+                            {% elif exchange.status == 'completed' %}
+                                <span class="badge bg-success">Complété</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ exchange.created_at|date:"d/m/Y H:i" }}</td>
+                        <td>
+                            {% if exchange.status == 'pending' %}
+                                <div class="btn-group" role="group">
+                                    <form method="POST" action="{% url 'dashboard:update_exchange_status' exchange.id %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="status" value="approved">
+                                        <button type="submit" class="btn btn-sm btn-success" 
+                                                onclick="return confirm('Approuver cette demande ?')">
+                                            <i class="fas fa-check"></i>
+                                        </button>
+                                    </form>
+                                    <form method="POST" action="{% url 'dashboard:update_exchange_status' exchange.id %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="status" value="rejected">
+                                        <button type="submit" class="btn btn-sm btn-danger" 
+                                                onclick="return confirm('Rejeter cette demande ?')">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            {% elif exchange.status == 'approved' %}
+                                <form method="POST" action="{% url 'dashboard:update_exchange_status' exchange.id %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="status" value="completed">
+                                    <button type="submit" class="btn btn-sm btn-primary" 
+                                            onclick="return confirm('Marquer comme complété ?')">
+                                        <i class="fas fa-check-double"></i> Compléter
+                                    </button>
+                                </form>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-4">
+                            <i class="fas fa-exchange-alt fa-3x mb-3"></i>
+                            <br>
+                            Aucune demande d'échange trouvée
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Pagination -->
+{% if page_obj.has_other_pages %}
+<nav aria-label="Pagination" class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page=1{% if status_filter != 'all' %}&status={{ status_filter }}{% endif %}">Premier</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if status_filter != 'all' %}&status={{ status_filter }}{% endif %}">Précédent</a>
+            </li>
+        {% endif %}
+        
+        <li class="page-item active">
+            <span class="page-link">
+                Page {{ page_obj.number }} sur {{ page_obj.paginator.num_pages }}
+            </span>
+        </li>
+        
+        {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if status_filter != 'all' %}&status={{ status_filter }}{% endif %}">Suivant</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if status_filter != 'all' %}&status={{ status_filter }}{% endif %}">Dernier</a>
+            </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.avatar-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.2rem;
+}
+</style>
+{% endblock %}

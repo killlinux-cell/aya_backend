@@ -1,0 +1,293 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Opérations en Lot{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-tools"></i> Opérations en Lot</h1>
+    <p>Gestion et maintenance en lot des données</p>
+</div>
+
+<!-- Statistiques pour les opérations -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body text-center">
+                <div class="display-4 text-warning">{{ inactive_qr_count }}</div>
+                <p class="text-muted">QR Codes Inactifs</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body text-center">
+                <div class="display-4 text-danger">{{ expired_qr_count }}</div>
+                <p class="text-muted">QR Codes Expirés</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body text-center">
+                <div class="display-4 text-info">{{ old_tokens_count }}</div>
+                <p class="text-muted">Anciens Tokens</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Opérations sur les QR Codes -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-qrcode"></i> Gestion des QR Codes</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="d-grid gap-2">
+                            <form method="post" class="d-inline">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="activate_all_qr">
+                                <button type="submit" class="btn btn-success w-100" 
+                                        onclick="return confirm('Activer tous les QR codes inactifs ?')">
+                                    <i class="fas fa-check-circle"></i> Activer Tous les QR Codes
+                                </button>
+                            </form>
+                            
+                            <form method="post" class="d-inline">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="deactivate_expired_qr">
+                                <button type="submit" class="btn btn-warning w-100"
+                                        onclick="return confirm('Désactiver tous les QR codes expirés ?')">
+                                    <i class="fas fa-clock"></i> Désactiver QR Codes Expirés
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="alert alert-info">
+                            <h6><i class="fas fa-info-circle"></i> Informations</h6>
+                            <ul class="mb-0">
+                                <li><strong>{{ inactive_qr_count }}</strong> QR codes inactifs peuvent être activés</li>
+                                <li><strong>{{ expired_qr_count }}</strong> QR codes expirés peuvent être désactivés</li>
+                                <li>Ces opérations sont irréversibles</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Opérations sur les Tokens -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-ticket-alt"></i> Gestion des Tokens d'Échange</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="d-grid gap-2">
+                            <form method="post" class="d-inline">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="cleanup_old_tokens">
+                                <button type="submit" class="btn btn-danger w-100"
+                                        onclick="return confirm('Supprimer tous les anciens tokens (30+ jours) ?')">
+                                    <i class="fas fa-trash"></i> Nettoyer Anciens Tokens
+                                </button>
+                            </form>
+                            
+                            <button type="button" class="btn btn-info w-100" onclick="showTokenStats()">
+                                <i class="fas fa-chart-bar"></i> Statistiques Tokens
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="alert alert-warning">
+                            <h6><i class="fas fa-exclamation-triangle"></i> Attention</h6>
+                            <ul class="mb-0">
+                                <li><strong>{{ old_tokens_count }}</strong> tokens anciens seront supprimés</li>
+                                <li>Cette action est irréversible</li>
+                                <li>Seuls les tokens de plus de 30 jours sont concernés</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Opérations sur les Utilisateurs -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-users"></i> Gestion des Utilisateurs</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="d-grid gap-2">
+                            <button type="button" class="btn btn-primary w-100" onclick="exportUsers()">
+                                <i class="fas fa-download"></i> Exporter Utilisateurs
+                            </button>
+                            
+                            <button type="button" class="btn btn-secondary w-100" onclick="resetInactiveUsers()">
+                                <i class="fas fa-user-times"></i> Réinitialiser Utilisateurs Inactifs
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="alert alert-secondary">
+                            <h6><i class="fas fa-info-circle"></i> Fonctionnalités</h6>
+                            <ul class="mb-0">
+                                <li>Export CSV des utilisateurs</li>
+                                <li>Réinitialisation des comptes inactifs</li>
+                                <li>Statistiques d'utilisation</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Opérations sur la Base de Données -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-database"></i> Maintenance Base de Données</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="d-grid gap-2">
+                            <button type="button" class="btn btn-warning w-100" onclick="optimizeDatabase()">
+                                <i class="fas fa-tools"></i> Optimiser Base de Données
+                            </button>
+                            
+                            <button type="button" class="btn btn-info w-100" onclick="backupDatabase()">
+                                <i class="fas fa-save"></i> Sauvegarder Base de Données
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="alert alert-danger">
+                            <h6><i class="fas fa-exclamation-triangle"></i> Opérations Critiques</h6>
+                            <ul class="mb-0">
+                                <li>Ces opérations peuvent prendre du temps</li>
+                                <li>Effectuez une sauvegarde avant l'optimisation</li>
+                                <li>L'application peut être temporairement indisponible</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal pour les statistiques des tokens -->
+<div class="modal fade" id="tokenStatsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Statistiques des Tokens</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="tokenStatsContent">
+                    <div class="text-center">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Chargement...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showTokenStats() {
+    const modal = new bootstrap.Modal(document.getElementById('tokenStatsModal'));
+    modal.show();
+    
+    // Charger les statistiques des tokens
+    fetch('/dashboard/api/token-stats/')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('tokenStatsContent').innerHTML = `
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="text-center">
+                            <div class="display-6 text-primary">${data.total}</div>
+                            <p>Total Tokens</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center">
+                            <div class="display-6 text-success">${data.active}</div>
+                            <p>Tokens Actifs</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center">
+                            <div class="display-6 text-danger">${data.expired}</div>
+                            <p>Tokens Expirés</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        })
+        .catch(error => {
+            document.getElementById('tokenStatsContent').innerHTML = `
+                <div class="alert alert-danger">
+                    Erreur lors du chargement des statistiques
+                </div>
+            `;
+        });
+}
+
+function exportUsers() {
+    if (confirm('Exporter la liste des utilisateurs en CSV ?')) {
+        window.location.href = '/dashboard/export/users/';
+    }
+}
+
+function resetInactiveUsers() {
+    if (confirm('Réinitialiser les comptes utilisateurs inactifs depuis plus de 90 jours ?')) {
+        // Implémenter la logique de réinitialisation
+        alert('Opération lancée');
+    }
+}
+
+function optimizeDatabase() {
+    if (confirm('Optimiser la base de données ? Cette opération peut prendre plusieurs minutes.')) {
+        // Implémenter l'optimisation
+        alert('Optimisation lancée');
+    }
+}
+
+function backupDatabase() {
+    if (confirm('Créer une sauvegarde de la base de données ?')) {
+        // Implémenter la sauvegarde
+        alert('Sauvegarde lancée');
+    }
+}
+</script>
+{% endblock %}

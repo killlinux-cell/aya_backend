@@ -1,0 +1,220 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+
+{% block title %}Gestion des Tokens d'Échange{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-exchange-alt"></i> Gestion des Tokens d'Échange</h2>
+</div>
+
+<!-- Statistiques -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ total_tokens }}</h4>
+                        <p class="mb-0">Total Tokens</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-exchange-alt fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ active_tokens }}</h4>
+                        <p class="mb-0">Actifs</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-check-circle fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ used_tokens }}</h4>
+                        <p class="mb-0">Utilisés</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-check-double fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ expired_tokens }}</h4>
+                        <p class="mb-0">Expirés</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-clock fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filtres -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            <div class="col-md-4">
+                <label for="status" class="form-label">Statut</label>
+                <select name="status" id="status" class="form-select">
+                    <option value="all" {% if status_filter == 'all' %}selected{% endif %}>Tous</option>
+                    <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Actifs</option>
+                    <option value="used" {% if status_filter == 'used' %}selected{% endif %}>Utilisés</option>
+                    <option value="expired" {% if status_filter == 'expired' %}selected{% endif %}>Expirés</option>
+                </select>
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-filter"></i> Filtrer
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Liste des tokens -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">Liste des Tokens d'Échange</h5>
+    </div>
+    <div class="card-body">
+        {% if page_obj %}
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Utilisateur</th>
+                        <th>Points</th>
+                        <th>Token</th>
+                        <th>Créé le</th>
+                        <th>Expire le</th>
+                        <th>Statut</th>
+                        <th>Utilisé le</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for token in page_obj %}
+                    <tr>
+                        <td>{{ token.id|truncatechars:8 }}</td>
+                        <td>
+                            <strong>{{ token.user.full_name }}</strong>
+                            <br>
+                            <small class="text-muted">{{ token.user.email }}</small>
+                        </td>
+                        <td>
+                            <span class="badge bg-primary">{{ token.points }} pts</span>
+                        </td>
+                        <td>
+                            <code>{{ token.token|truncatechars:12 }}</code>
+                        </td>
+                        <td>{{ token.created_at|date:"d/m/Y H:i" }}</td>
+                        <td>{{ token.expires_at|date:"d/m/Y H:i" }}</td>
+                        <td>
+                            {% if token.is_used %}
+                                <span class="badge bg-success">Utilisé</span>
+                            {% elif token.is_expired %}
+                                <span class="badge bg-warning">Expiré</span>
+                            {% else %}
+                                <span class="badge bg-info">Actif</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if token.used_at %}
+                                {{ token.used_at|date:"d/m/Y H:i" }}
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if page_obj.has_other_pages %}
+        <nav aria-label="Pagination des tokens">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% if status_filter != 'all' %}&status={{ status_filter }}{% endif %}">Premier</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if status_filter != 'all' %}&status={{ status_filter }}{% endif %}">Précédent</a>
+                    </li>
+                {% endif %}
+
+                <li class="page-item active">
+                    <span class="page-link">
+                        Page {{ page_obj.number }} sur {{ page_obj.paginator.num_pages }}
+                    </span>
+                </li>
+
+                {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if status_filter != 'all' %}&status={{ status_filter }}{% endif %}">Suivant</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if status_filter != 'all' %}&status={{ status_filter }}{% endif %}">Dernier</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-exchange-alt fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">Aucun token trouvé</h5>
+            <p class="text-muted">Aucun token d'échange n'a encore été créé.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Informations sur les tokens -->
+<div class="card mt-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-info-circle"></i> Informations sur les Tokens</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-4">
+                <h6><i class="fas fa-clock text-info"></i> Durée de vie</h6>
+                <p class="text-muted">Les tokens d'échange expirent automatiquement après 3 minutes.</p>
+            </div>
+            <div class="col-md-4">
+                <h6><i class="fas fa-shield-alt text-success"></i> Sécurité</h6>
+                <p class="text-muted">Chaque token est unique et ne peut être utilisé qu'une seule fois.</p>
+            </div>
+            <div class="col-md-4">
+                <h6><i class="fas fa-mobile-alt text-warning"></i> Utilisation</h6>
+                <p class="text-muted">Les tokens sont scannés par les vendeurs pour valider les échanges.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

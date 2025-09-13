@@ -1,0 +1,480 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Dashboard - Gestion QR Codes{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-qrcode"></i> Gestion des QR Codes</h1>
+    <p>Créer, modifier et gérer vos codes QR</p>
+</div>
+
+<!-- Filtres et recherche -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            <div class="col-md-6">
+                <input type="text" class="form-control search-box" name="search" 
+                       placeholder="Rechercher par code ou description..." 
+                       value="{{ search }}">
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" name="status">
+                    <option value="all" {% if status_filter == 'all' %}selected{% endif %}>Tous les statuts</option>
+                    <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Actifs</option>
+                    <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Inactifs</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-search"></i> Filtrer
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Bouton créer QR Code -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3>Liste des QR Codes ({{ page_obj.paginator.count }} total)</h3>
+    <div class="btn-group" role="group">
+        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#bulkGenerateModal">
+            <i class="fas fa-magic"></i> Génération en Lot
+        </button>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createQRModal">
+            <i class="fas fa-plus"></i> Créer un QR Code
+        </button>
+    </div>
+</div>
+
+<!-- Tableau des QR codes -->
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Code</th>
+                        <th>Points</th>
+                        <th>Type</th>
+                        <th>Description</th>
+                        <th>Statut</th>
+                        <th>Scans</th>
+                        <th>Créé le</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for qr_code in page_obj %}
+                    <tr>
+                        <td>
+                            <strong>{{ qr_code.code }}</strong>
+                        </td>
+                        <td>
+                            <span class="badge bg-primary">{{ qr_code.points }} pts</span>
+                        </td>
+                        <td>
+                            {% if qr_code.prize_type == 'loyalty_ticket' %}
+                                <span class="badge bg-warning">🎫 Ticket Fidélité</span>
+                            {% elif qr_code.prize_type == 'special_prize' %}
+                                <span class="badge bg-info">🎁 Prix Spécial</span>
+                            {% else %}
+                                <span class="badge bg-success">⭐ Points</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ qr_code.description|truncatechars:50 }}</td>
+                        <td>
+                            {% if qr_code.is_active %}
+                                <span class="badge bg-success">Actif</span>
+                            {% else %}
+                                <span class="badge bg-danger">Inactif</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge bg-info">{{ qr_code.scanned_by_users.count }}</span>
+                        </td>
+                        <td>{{ qr_code.created_at|date:"d/m/Y H:i" }}</td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <button type="button" class="btn btn-sm btn-outline-info" 
+                                        onclick="showQRCode('{{ qr_code.id }}')" title="Voir le QR Code">
+                                    <i class="fas fa-qrcode"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-success" 
+                                        onclick="downloadQRCode('{{ qr_code.id }}')" title="Télécharger">
+                                    <i class="fas fa-download"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-primary" 
+                                        onclick="editQRCode('{{ qr_code.id }}')" title="Modifier">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger" 
+                                        onclick="deleteQRCode('{{ qr_code.id }}', '{{ qr_code.code }}')" title="Supprimer">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-4">
+                            <i class="fas fa-qrcode fa-3x mb-3"></i>
+                            <br>
+                            Aucun QR code trouvé
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Pagination -->
+{% if page_obj.has_other_pages %}
+<nav aria-label="Pagination" class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page=1{% if search %}&search={{ search }}{% endif %}{% if status_filter != 'all' %}&status={{ status_filter }}{% endif %}">Premier</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status_filter != 'all' %}&status={{ status_filter }}{% endif %}">Précédent</a>
+            </li>
+        {% endif %}
+        
+        <li class="page-item active">
+            <span class="page-link">
+                Page {{ page_obj.number }} sur {{ page_obj.paginator.num_pages }}
+            </span>
+        </li>
+        
+        {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status_filter != 'all' %}&status={{ status_filter }}{% endif %}">Suivant</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search %}&search={{ search }}{% endif %}{% if status_filter != 'all' %}&status={{ status_filter }}{% endif %}">Dernier</a>
+            </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+<!-- Modal Créer QR Code -->
+<div class="modal fade" id="createQRModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Créer un nouveau QR Code</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{% url 'dashboard:create_qr_code' %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="code" class="form-label">Code QR *</label>
+                        <input type="text" class="form-control" id="code" name="code" required>
+                        <div class="form-text">Code unique pour le QR code</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="points" class="form-label">Points *</label>
+                        <input type="number" class="form-control" id="points" name="points" min="0" required>
+                        <div class="form-text">Nombre de points à attribuer</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="prize_type" class="form-label">Type de Prix</label>
+                        <select class="form-select" id="prize_type" name="prize_type">
+                            <option value="points">Points</option>
+                            <option value="loyalty_ticket">Ticket de Fidélité</option>
+                            <option value="special_prize">Prix Spécial</option>
+                        </select>
+                        <div class="form-text">Type de récompense</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                        <div class="form-text">Description du QR code</div>
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="is_active" name="is_active" checked>
+                        <label class="form-check-label" for="is_active">
+                            QR Code actif
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-success">Créer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Modifier QR Code -->
+<div class="modal fade" id="editQRModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Modifier le QR Code</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="editQRForm">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="edit_code" class="form-label">Code QR</label>
+                        <input type="text" class="form-control" id="edit_code" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_points" class="form-label">Points *</label>
+                        <input type="number" class="form-control" id="edit_points" name="points" min="0" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_description" class="form-label">Description</label>
+                        <textarea class="form-control" id="edit_description" name="description" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="edit_is_active" name="is_active">
+                        <label class="form-check-label" for="edit_is_active">
+                            QR Code actif
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-primary">Modifier</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal pour afficher le QR Code -->
+<div class="modal fade" id="qrCodeModal" tabindex="-1" aria-labelledby="qrCodeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="qrCodeModalLabel">
+                    <i class="fas fa-qrcode"></i> QR Code
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <div id="qrCodeContent">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Chargement...</span>
+                    </div>
+                    <p class="mt-2">Génération du QR Code...</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                <button type="button" class="btn btn-primary" id="downloadQRBtn" style="display: none;">
+                    <i class="fas fa-download"></i> Télécharger
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal pour génération en lot -->
+<div class="modal fade" id="bulkGenerateModal" tabindex="-1" aria-labelledby="bulkGenerateModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="bulkGenerateModalLabel">
+                    <i class="fas fa-plus-circle"></i> Génération en Lot
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="bulkGenerateForm">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="bulkCount" class="form-label">Nombre de QR Codes</label>
+                        <input type="number" class="form-control" id="bulkCount" name="count" value="10" min="1" max="100" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="bulkPoints" class="form-label">Points par QR Code</label>
+                        <input type="number" class="form-control" id="bulkPoints" name="points" value="10" min="1" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="bulkDescription" class="form-label">Description</label>
+                        <input type="text" class="form-control" id="bulkDescription" name="description" 
+                               value="QR Code généré automatiquement" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-magic"></i> Générer
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentQRCodeId = null;
+
+// Afficher le QR Code
+function showQRCode(qrCodeId) {
+    currentQRCodeId = qrCodeId;
+    const modal = new bootstrap.Modal(document.getElementById('qrCodeModal'));
+    modal.show();
+    
+    // Réinitialiser le contenu
+    document.getElementById('qrCodeContent').innerHTML = `
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Chargement...</span>
+        </div>
+        <p class="mt-2">Génération du QR Code...</p>
+    `;
+    document.getElementById('downloadQRBtn').style.display = 'none';
+    
+    // Générer le QR code
+    fetch(`/dashboard/qr-codes/${qrCodeId}/generate/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('qrCodeContent').innerHTML = `
+                    <div class="mb-3">
+                        <img src="${data.image}" alt="QR Code" class="img-fluid" style="max-width: 300px;">
+                    </div>
+                    <div class="card">
+                        <div class="card-body">
+                            <h6 class="card-title">Informations du QR Code</h6>
+                            <p class="card-text">
+                                <strong>Code:</strong> ${data.code}<br>
+                                <strong>Points:</strong> ${data.points}<br>
+                                <strong>Description:</strong> ${data.description}<br>
+                                <strong>URL:</strong> <small class="text-muted">${data.qr_url}</small>
+                            </p>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('downloadQRBtn').style.display = 'inline-block';
+            } else {
+                document.getElementById('qrCodeContent').innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Erreur lors de la génération du QR Code
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('Erreur:', error);
+            document.getElementById('qrCodeContent').innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Erreur de connexion
+                </div>
+            `;
+        });
+}
+
+// Télécharger le QR Code
+function downloadQRCode(qrCodeId) {
+    window.open(`/dashboard/qr-codes/${qrCodeId}/download/`, '_blank');
+}
+
+// Télécharger depuis le modal
+document.getElementById('downloadQRBtn').addEventListener('click', function() {
+    if (currentQRCodeId) {
+        downloadQRCode(currentQRCodeId);
+    }
+});
+
+// Génération en lot
+document.getElementById('bulkGenerateForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Génération...';
+    submitBtn.disabled = true;
+    
+    fetch('/dashboard/qr-codes/bulk-generate/', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Fermer le modal
+            bootstrap.Modal.getInstance(document.getElementById('bulkGenerateModal')).hide();
+            
+            // Afficher un message de succès
+            showAlert(`✅ ${data.count} QR codes générés avec succès !`, 'success');
+            
+            // Recharger la page après un délai
+            setTimeout(() => {
+                window.location.reload();
+            }, 2000);
+        } else {
+            showAlert('❌ Erreur lors de la génération', 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Erreur:', error);
+        showAlert('❌ Erreur de connexion', 'danger');
+    })
+    .finally(() => {
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+    });
+});
+
+function editQRCode(qrCodeId) {
+    // Récupérer les données du QR code via AJAX
+    fetch(`/dashboard/qr-codes/${qrCodeId}/edit/`)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('edit_code').value = data.code;
+            document.getElementById('edit_points').value = data.points;
+            document.getElementById('edit_description').value = data.description;
+            document.getElementById('edit_is_active').checked = data.is_active;
+            
+            // Configurer le formulaire pour la soumission
+            document.getElementById('editQRForm').action = `/dashboard/qr-codes/${qrCodeId}/edit/`;
+            document.getElementById('editQRForm').method = 'POST';
+            
+            // Afficher le modal
+            new bootstrap.Modal(document.getElementById('editQRModal')).show();
+        })
+        .catch(error => {
+            console.error('Erreur:', error);
+            alert('Erreur lors du chargement des données');
+        });
+}
+
+function deleteQRCode(qrCodeId, code) {
+    if (confirm(`Êtes-vous sûr de vouloir supprimer le QR code "${code}" ?`)) {
+        // Créer un formulaire pour la suppression
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/dashboard/qr-codes/${qrCodeId}/delete/`;
+        
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrfmiddlewaretoken';
+        csrfInput.value = csrfToken;
+        
+        form.appendChild(csrfInput);
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+</script>
+{% endblock %}

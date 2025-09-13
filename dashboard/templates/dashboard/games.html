@@ -1,0 +1,204 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+
+{% block title %}Gestion des Jeux{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-gamepad"></i> Gestion des Jeux</h2>
+</div>
+
+<!-- Statistiques -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ total_games }}</h4>
+                        <p class="mb-0">Total Jeux</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-gamepad fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ spin_wheel_games }}</h4>
+                        <p class="mb-0">Spin Wheel</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-circle-notch fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ scratch_games }}</h4>
+                        <p class="mb-0">Scratch & Win</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-gem fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ total_points_distributed }}</h4>
+                        <p class="mb-0">Points Distribués</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-coins fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filtres -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            <div class="col-md-3">
+                <label for="game_type" class="form-label">Type de Jeu</label>
+                <select name="game_type" id="game_type" class="form-select">
+                    <option value="all" {% if game_type_filter == 'all' %}selected{% endif %}>Tous</option>
+                    <option value="spin_wheel" {% if game_type_filter == 'spin_wheel' %}selected{% endif %}>Spin Wheel</option>
+                    <option value="scratch_and_win" {% if game_type_filter == 'scratch_and_win' %}selected{% endif %}>Scratch & Win</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="date_from" class="form-label">Date de début</label>
+                <input type="date" class="form-control" id="date_from" name="date_from" value="{{ date_from }}">
+            </div>
+            <div class="col-md-3">
+                <label for="date_to" class="form-label">Date de fin</label>
+                <input type="date" class="form-control" id="date_to" name="date_to" value="{{ date_to }}">
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-filter"></i> Filtrer
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Liste des jeux -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">Historique des Jeux</h5>
+    </div>
+    <div class="card-body">
+        {% if page_obj %}
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Utilisateur</th>
+                        <th>Type de Jeu</th>
+                        <th>Points Gagnés</th>
+                        <th>Prix</th>
+                        <th>Date</th>
+                        <th>Statut</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for game in page_obj %}
+                    <tr>
+                        <td>{{ game.id }}</td>
+                        <td>
+                            <strong>{{ game.user.full_name }}</strong>
+                            <br>
+                            <small class="text-muted">{{ game.user.email }}</small>
+                        </td>
+                        <td>
+                            {% if game.game_type == 'spin_wheel' %}
+                                <span class="badge bg-success">
+                                    <i class="fas fa-circle-notch"></i> Spin Wheel
+                                </span>
+                            {% elif game.game_type == 'scratch_and_win' %}
+                                <span class="badge bg-warning">
+                                    <i class="fas fa-gem"></i> Scratch & Win
+                                </span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ game.get_game_type_display }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge bg-primary">{{ game.points_won }} pts</span>
+                        </td>
+                        <td>{{ game.prize_text|default:"N/A" }}</td>
+                        <td>{{ game.played_at|date:"d/m/Y H:i" }}</td>
+                        <td>
+                            {% if game.is_winning %}
+                                <span class="badge bg-success">Gagné</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Perdu</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if page_obj.has_other_pages %}
+        <nav aria-label="Pagination des jeux">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% if game_type_filter != 'all' %}&game_type={{ game_type_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">Premier</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if game_type_filter != 'all' %}&game_type={{ game_type_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">Précédent</a>
+                    </li>
+                {% endif %}
+
+                <li class="page-item active">
+                    <span class="page-link">
+                        Page {{ page_obj.number }} sur {{ page_obj.paginator.num_pages }}
+                    </span>
+                </li>
+
+                {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if game_type_filter != 'all' %}&game_type={{ game_type_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">Suivant</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if game_type_filter != 'all' %}&game_type={{ game_type_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">Dernier</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-gamepad fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">Aucun jeu trouvé</h5>
+            <p class="text-muted">Aucun jeu n'a encore été joué avec les critères sélectionnés.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

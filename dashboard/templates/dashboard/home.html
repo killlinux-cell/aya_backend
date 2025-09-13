@@ -1,0 +1,305 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Dashboard - Accueil{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-tachometer-alt"></i> Dashboard Aya</h1>
+    <p>Vue d'ensemble de votre application de fidélité</p>
+</div>
+
+<!-- Statistiques principales -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-number">{{ total_users }}</div>
+                    <div class="stat-label">Utilisateurs</div>
+                </div>
+                <div class="stat-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-number">{{ total_qr_codes }}</div>
+                    <div class="stat-label">QR Codes</div>
+                </div>
+                <div class="stat-icon">
+                    <i class="fas fa-qrcode"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-number">{{ total_scans }}</div>
+                    <div class="stat-label">Scans Total</div>
+                </div>
+                <div class="stat-icon">
+                    <i class="fas fa-mobile-alt"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-number">{{ total_points_distributed }}</div>
+                    <div class="stat-label">Points Distribués</div>
+                </div>
+                <div class="stat-icon">
+                    <i class="fas fa-coins"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Nouvelles statistiques -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-number">{{ total_vendors }}</div>
+                    <div class="stat-label">Vendeurs</div>
+                </div>
+                <div class="stat-icon">
+                    <i class="fas fa-store"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-number">{{ total_games_played }}</div>
+                    <div class="stat-label">Jeux Joués</div>
+                </div>
+                <div class="stat-icon">
+                    <i class="fas fa-gamepad"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-number">{{ total_exchange_tokens }}</div>
+                    <div class="stat-label">Tokens d'Échange</div>
+                </div>
+                <div class="stat-icon">
+                    <i class="fas fa-ticket-alt"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-number">{{ active_vendors }}</div>
+                    <div class="stat-label">Vendeurs Actifs</div>
+                </div>
+                <div class="stat-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistiques récentes -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-chart-line"></i> Activité Récente (7 jours)</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6">
+                        <h3 class="text-primary">{{ recent_scans }}</h3>
+                        <p class="text-muted">Nouveaux Scans</p>
+                    </div>
+                    <div class="col-6">
+                        <h3 class="text-success">{{ recent_users }}</h3>
+                        <p class="text-muted">Nouveaux Utilisateurs</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-warning text-white">
+                <h5 class="mb-0"><i class="fas fa-exclamation-triangle"></i> Actions Requises</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 class="text-warning">{{ pending_exchanges }}</h4>
+                        <p class="text-muted mb-0">Demandes d'échange en attente</p>
+                    </div>
+                    <a href="{% url 'dashboard:exchanges' %}" class="btn btn-warning">
+                        <i class="fas fa-eye"></i> Voir
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- QR Codes populaires -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-star"></i> QR Codes les Plus Populaires</h5>
+            </div>
+            <div class="card-body">
+                {% if popular_qr_codes %}
+                    <div class="list-group list-group-flush">
+                        {% for qr_code in popular_qr_codes %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>{{ qr_code.code }}</strong>
+                                <br>
+                                <small class="text-muted">{{ qr_code.description }}</small>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge bg-primary">{{ qr_code.scan_count }} scans</span>
+                                <br>
+                                <small class="text-success">{{ qr_code.points }} points</small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted text-center">Aucun QR code scanné pour le moment</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Utilisateurs actifs -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-trophy"></i> Utilisateurs les Plus Actifs</h5>
+            </div>
+            <div class="card-body">
+                {% if active_users %}
+                    <div class="list-group list-group-flush">
+                        {% for user in active_users %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>{{ user.full_name }}</strong>
+                                <br>
+                                <small class="text-muted">{{ user.email }}</small>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge bg-success">{{ user.scan_count }} scans</span>
+                                <br>
+                                <small class="text-primary">{{ user.available_points }} points</small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted text-center">Aucun utilisateur actif pour le moment</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Actions rapides -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-bolt"></i> Actions Rapides</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-2">
+                        <a href="{% url 'dashboard:qr_codes' %}" class="btn btn-primary btn-lg w-100 mb-3">
+                            <i class="fas fa-plus"></i><br>
+                            Créer QR Code
+                        </a>
+                    </div>
+                    <div class="col-md-2">
+                        <a href="{% url 'dashboard:users' %}" class="btn btn-info btn-lg w-100 mb-3">
+                            <i class="fas fa-users"></i><br>
+                            Gérer Utilisateurs
+                        </a>
+                    </div>
+                    <div class="col-md-2">
+                        <a href="{% url 'dashboard:analytics' %}" class="btn btn-success btn-lg w-100 mb-3">
+                            <i class="fas fa-chart-bar"></i><br>
+                            Voir Analytics
+                        </a>
+                    </div>
+                    <div class="col-md-2">
+                        <a href="{% url 'dashboard:exchanges' %}" class="btn btn-warning btn-lg w-100 mb-3">
+                            <i class="fas fa-exchange-alt"></i><br>
+                            Gérer Échanges
+                        </a>
+                    </div>
+                    <div class="col-md-2">
+                        <a href="{% url 'dashboard:vendors' %}" class="btn btn-secondary btn-lg w-100 mb-3">
+                            <i class="fas fa-store"></i><br>
+                            Gérer Vendeurs
+                        </a>
+                    </div>
+                    <div class="col-md-2">
+                        <a href="{% url 'dashboard:games' %}" class="btn btn-dark btn-lg w-100 mb-3">
+                            <i class="fas fa-gamepad"></i><br>
+                            Gérer Jeux
+                        </a>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-md-2">
+                        <a href="{% url 'dashboard:qr_codes_analytics' %}" class="btn btn-outline-primary btn-lg w-100 mb-3">
+                            <i class="fas fa-chart-line"></i><br>
+                            Analytics QR
+                        </a>
+                    </div>
+                    <div class="col-md-2">
+                        <a href="{% url 'dashboard:system_health' %}" class="btn btn-outline-danger btn-lg w-100 mb-3">
+                            <i class="fas fa-heartbeat"></i><br>
+                            Santé Système
+                        </a>
+                    </div>
+                    <div class="col-md-2">
+                        <a href="{% url 'dashboard:bulk_operations' %}" class="btn btn-outline-warning btn-lg w-100 mb-3">
+                            <i class="fas fa-tools"></i><br>
+                            Opérations Lot
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

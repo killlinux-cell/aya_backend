@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aya+ API - Backend</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .hero-section {
+            padding: 100px 0;
+            color: white;
+            text-align: center;
+        }
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-10px);
+        }
+        .card-header {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            border-radius: 15px 15px 0 0 !important;
+        }
+        .btn-custom {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            border: none;
+            border-radius: 25px;
+            padding: 12px 30px;
+            color: white;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+        .btn-custom:hover {
+            background: linear-gradient(135deg, #45a049, #4CAF50);
+            color: white;
+            transform: scale(1.05);
+        }
+        .feature-icon {
+            font-size: 3rem;
+            color: #4CAF50;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="hero-section">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-8 mx-auto">
+                    <h1 class="display-4 fw-bold mb-4">
+                        <i class="fas fa-leaf"></i> Aya+ API
+                    </h1>
+                    <p class="lead mb-5">
+                        Backend API pour l'application mobile Aya+ - Système de fidélité et de jeux
+                    </p>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <a href="/dashboard/" class="btn btn-custom btn-lg w-100">
+                                <i class="fas fa-tachometer-alt"></i><br>
+                                Dashboard
+                            </a>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <a href="/admin/" class="btn btn-custom btn-lg w-100">
+                                <i class="fas fa-cog"></i><br>
+                                Admin Django
+                            </a>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <a href="/api/" class="btn btn-custom btn-lg w-100">
+                                <i class="fas fa-code"></i><br>
+                                API REST
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container py-5">
+        <div class="row">
+            <div class="col-lg-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-header text-center">
+                        <i class="fas fa-mobile-alt feature-icon"></i>
+                        <h4>API Mobile</h4>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">
+                            API REST complète pour l'application mobile Flutter avec authentification JWT, 
+                            gestion des QR codes, jeux et système de fidélité.
+                        </p>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-check text-success"></i> Authentification sécurisée</li>
+                            <li><i class="fas fa-check text-success"></i> Gestion des QR codes</li>
+                            <li><i class="fas fa-check text-success"></i> Système de jeux</li>
+                            <li><i class="fas fa-check text-success"></i> Points de fidélité</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-header text-center">
+                        <i class="fas fa-chart-line feature-icon"></i>
+                        <h4>Dashboard Admin</h4>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">
+                            Interface d'administration moderne pour gérer les utilisateurs, 
+                            QR codes, vendeurs et analyser les statistiques.
+                        </p>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-check text-success"></i> Gestion des utilisateurs</li>
+                            <li><i class="fas fa-check text-success"></i> Création de QR codes</li>
+                            <li><i class="fas fa-check text-success"></i> Analytics avancées</li>
+                            <li><i class="fas fa-check text-success"></i> Gestion des vendeurs</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-header text-center">
+                        <i class="fas fa-store feature-icon"></i>
+                        <h4>Mode Vendeur</h4>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">
+                            Système complet pour les vendeurs avec validation des échanges, 
+                            génération de reçus PDF et suivi des transactions.
+                        </p>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-check text-success"></i> Validation des échanges</li>
+                            <li><i class="fas fa-check text-success"></i> Reçus PDF</li>
+                            <li><i class="fas fa-check text-success"></i> Historique des ventes</li>
+                            <li><i class="fas fa-check text-success"></i> Statistiques vendeur</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-dark text-white text-center py-4">
+        <div class="container">
+            <p class="mb-0">
+                <i class="fas fa-leaf"></i> Aya+ API v1.0.0 | 
+                Développé avec <i class="fas fa-heart text-danger"></i> en Django & Flutter
+            </p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

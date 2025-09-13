@@ -1,0 +1,439 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Dashboard - Analytics{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-chart-line"></i> Analytics</h1>
+    <p>Statistiques et graphiques de votre application</p>
+</div>
+
+<!-- Statistiques générales -->
+<div class="row mb-4">
+    <div class="col-md-2">
+        <div class="card bg-primary text-white">
+            <div class="card-body text-center">
+                <h4>{{ total_vendors }}</h4>
+                <p class="mb-0">Vendeurs</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center">
+                <h4>{{ active_vendors }}</h4>
+                <p class="mb-0">Vendeurs Actifs</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card bg-info text-white">
+            <div class="card-body text-center">
+                <h4>{{ total_games }}</h4>
+                <p class="mb-0">Jeux Joués</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card bg-warning text-white">
+            <div class="card-body text-center">
+                <h4>{{ total_tokens }}</h4>
+                <p class="mb-0">Tokens Créés</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card bg-dark text-white">
+            <div class="card-body text-center">
+                <h4>{{ used_tokens }}</h4>
+                <p class="mb-0">Tokens Utilisés</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card bg-secondary text-white">
+            <div class="card-body text-center">
+                <h4>{{ conversion_rate }}%</h4>
+                <p class="mb-0">Taux Conversion</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Graphiques principaux -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-mobile-alt"></i> Scans par Jour (7 derniers jours)</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="scansChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-coins"></i> Points Distribués par Jour</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="pointsChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Nouveaux graphiques -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-gamepad"></i> Jeux par Jour (7 derniers jours)</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="gamesChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-exchange-alt"></i> Tokens d'Échange par Jour</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="tokensChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Top QR Codes -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-star"></i> Top 10 QR Codes</h5>
+            </div>
+            <div class="card-body">
+                {% if top_qr_codes %}
+                    <div class="list-group list-group-flush">
+                        {% for qr_code in top_qr_codes %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>{{ qr_code.code }}</strong>
+                                <br>
+                                <small class="text-muted">{{ qr_code.description|truncatechars:40 }}</small>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge bg-primary">{{ qr_code.scan_count }} scans</span>
+                                <br>
+                                <small class="text-success">{{ qr_code.points }} points</small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted text-center">Aucune donnée disponible</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Top Utilisateurs -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-trophy"></i> Top 10 Utilisateurs</h5>
+            </div>
+            <div class="card-body">
+                {% if top_users %}
+                    <div class="list-group list-group-flush">
+                        {% for user in top_users %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>{{ user.full_name }}</strong>
+                                <br>
+                                <small class="text-muted">{{ user.email }}</small>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge bg-success">{{ user.scan_count }} scans</span>
+                                <br>
+                                <small class="text-primary">{{ user.total_points|default:0 }} points</small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted text-center">Aucune donnée disponible</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Top Vendeurs -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-store"></i> Top 5 Vendeurs</h5>
+            </div>
+            <div class="card-body">
+                {% if top_vendors %}
+                    <div class="list-group list-group-flush">
+                        {% for vendor in top_vendors %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>{{ vendor.business_name }}</strong>
+                                <br>
+                                <small class="text-muted">{{ vendor.full_name }}</small>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge bg-success">{{ vendor.tokens_validated }} tokens</span>
+                                <br>
+                                <small class="text-primary">{{ vendor.status|title }}</small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted text-center">Aucun vendeur trouvé</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistiques détaillées -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-info-circle"></i> Statistiques Détaillées</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <div class="stat-item">
+                            <h3 class="text-primary" id="totalScans">-</h3>
+                            <p class="text-muted">Total Scans</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-item">
+                            <h3 class="text-success" id="totalPoints">-</h3>
+                            <p class="text-muted">Points Distribués</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-item">
+                            <h3 class="text-info" id="avgScansPerUser">-</h3>
+                            <p class="text-muted">Moyenne Scans/User</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-item">
+                            <h3 class="text-warning" id="avgPointsPerScan">-</h3>
+                            <p class="text-muted">Moyenne Points/Scan</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Données des graphiques
+const scansData = {{ daily_scans|safe }};
+const pointsData = {{ daily_points|safe }};
+const gamesData = {{ daily_games|safe }};
+const tokensData = {{ daily_tokens|safe }};
+
+// Graphique des scans
+const scansCtx = document.getElementById('scansChart').getContext('2d');
+new Chart(scansCtx, {
+    type: 'line',
+    data: {
+        labels: scansData.map(item => item.date),
+        datasets: [{
+            label: 'Scans',
+            data: scansData.map(item => item.count),
+            borderColor: '#4CAF50',
+            backgroundColor: 'rgba(76, 175, 80, 0.1)',
+            borderWidth: 3,
+            fill: true,
+            tension: 0.4
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: {
+                    color: 'rgba(0,0,0,0.1)'
+                }
+            },
+            x: {
+                grid: {
+                    display: false
+                }
+            }
+        }
+    }
+});
+
+// Graphique des points
+const pointsCtx = document.getElementById('pointsChart').getContext('2d');
+new Chart(pointsCtx, {
+    type: 'bar',
+    data: {
+        labels: pointsData.map(item => item.date),
+        datasets: [{
+            label: 'Points',
+            data: pointsData.map(item => item.points),
+            backgroundColor: 'rgba(76, 175, 80, 0.8)',
+            borderColor: '#4CAF50',
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: {
+                    color: 'rgba(0,0,0,0.1)'
+                }
+            },
+            x: {
+                grid: {
+                    display: false
+                }
+            }
+        }
+    }
+});
+
+// Graphique des jeux
+const gamesCtx = document.getElementById('gamesChart').getContext('2d');
+new Chart(gamesCtx, {
+    type: 'bar',
+    data: {
+        labels: gamesData.map(item => item.date),
+        datasets: [{
+            label: 'Spin Wheel',
+            data: gamesData.map(item => item.spin_wheel),
+            backgroundColor: '#4CAF50',
+            borderColor: '#4CAF50',
+            borderWidth: 1
+        }, {
+            label: 'Scratch & Win',
+            data: gamesData.map(item => item.scratch_and_win),
+            backgroundColor: '#FF9800',
+            borderColor: '#FF9800',
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: true,
+                position: 'top'
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: {
+                    color: 'rgba(0,0,0,0.1)'
+                }
+            },
+            x: {
+                grid: {
+                    display: false
+                }
+            }
+        }
+    }
+});
+
+// Graphique des tokens
+const tokensCtx = document.getElementById('tokensChart').getContext('2d');
+new Chart(tokensCtx, {
+    type: 'line',
+    data: {
+        labels: tokensData.map(item => item.date),
+        datasets: [{
+            label: 'Tokens Créés',
+            data: tokensData.map(item => item.created),
+            borderColor: '#2196F3',
+            backgroundColor: 'rgba(33, 150, 243, 0.1)',
+            borderWidth: 3,
+            fill: true,
+            tension: 0.4
+        }, {
+            label: 'Tokens Utilisés',
+            data: tokensData.map(item => item.used),
+            borderColor: '#4CAF50',
+            backgroundColor: 'rgba(76, 175, 80, 0.1)',
+            borderWidth: 3,
+            fill: true,
+            tension: 0.4
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: true,
+                position: 'top'
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: {
+                    color: 'rgba(0,0,0,0.1)'
+                }
+            },
+            x: {
+                grid: {
+                    display: false
+                }
+            }
+        }
+    }
+});
+
+// Calculer les statistiques
+const totalScans = scansData.reduce((sum, item) => sum + item.count, 0);
+const totalPoints = pointsData.reduce((sum, item) => sum + item.points, 0);
+
+document.getElementById('totalScans').textContent = totalScans;
+document.getElementById('totalPoints').textContent = totalPoints;
+document.getElementById('avgScansPerUser').textContent = totalScans > 0 ? Math.round(totalScans / {{ top_users|length|default:1 }}) : 0;
+document.getElementById('avgPointsPerScan').textContent = totalScans > 0 ? Math.round(totalPoints / totalScans) : 0;
+</script>
+{% endblock %}

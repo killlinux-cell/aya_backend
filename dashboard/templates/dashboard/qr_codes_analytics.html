@@ -1,0 +1,229 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Analytics QR Codes{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-chart-line"></i> Analytics QR Codes</h1>
+    <p>Analyse détaillée des performances des QR codes</p>
+</div>
+
+<!-- Statistiques générales -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-number">{{ expired_qr_codes }}</div>
+                    <div class="stat-label">QR Codes Expirés</div>
+                </div>
+                <div class="stat-icon text-warning">
+                    <i class="fas fa-clock"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-number">{{ inactive_qr_codes }}</div>
+                    <div class="stat-label">QR Codes Inactifs</div>
+                </div>
+                <div class="stat-icon text-danger">
+                    <i class="fas fa-ban"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-number">{{ top_scanned|length }}</div>
+                    <div class="stat-label">Top Scannés</div>
+                </div>
+                <div class="stat-icon text-success">
+                    <i class="fas fa-star"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-number">{{ prize_type_stats|length }}</div>
+                    <div class="stat-label">Types de Prix</div>
+                </div>
+                <div class="stat-icon text-info">
+                    <i class="fas fa-gift"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistiques par type de prix -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-chart-pie"></i> Répartition par Type de Prix</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="prizeTypeChart"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-chart-bar"></i> QR Codes par Mois</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="monthlyChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Top QR codes les plus scannés -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-trophy"></i> Top 10 QR Codes les Plus Scannés</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Rang</th>
+                                <th>Code</th>
+                                <th>Type</th>
+                                <th>Points</th>
+                                <th>Scans</th>
+                                <th>Description</th>
+                                <th>Statut</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for qr in top_scanned %}
+                            <tr>
+                                <td>
+                                    <span class="badge bg-primary">{{ forloop.counter }}</span>
+                                </td>
+                                <td><code>{{ qr.code }}</code></td>
+                                <td>
+                                    <span class="badge bg-info">{{ qr.get_prize_type_display }}</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-success">{{ qr.points }} pts</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-warning">{{ qr.scan_count }}</span>
+                                </td>
+                                <td>{{ qr.description|truncatechars:30 }}</td>
+                                <td>
+                                    {% if qr.is_active %}
+                                        <span class="badge bg-success">Actif</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Inactif</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="7" class="text-center text-muted">
+                                    Aucun QR code scanné pour le moment
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Graphique des types de prix
+const prizeTypeCtx = document.getElementById('prizeTypeChart').getContext('2d');
+const prizeTypeData = {
+    labels: [
+        {% for stat in prize_type_stats %}
+        '{{ stat.prize_type|title }}',
+        {% endfor %}
+    ],
+    datasets: [{
+        data: [
+            {% for stat in prize_type_stats %}
+            {{ stat.count }},
+            {% endfor %}
+        ],
+        backgroundColor: [
+            '#4CAF50',
+            '#2196F3',
+            '#FF9800',
+            '#9C27B0',
+            '#F44336'
+        ]
+    }]
+};
+
+new Chart(prizeTypeCtx, {
+    type: 'doughnut',
+    data: prizeTypeData,
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+
+// Graphique mensuel
+const monthlyCtx = document.getElementById('monthlyChart').getContext('2d');
+const monthlyData = {
+    labels: [
+        {% for stat in monthly_stats reversed %}
+        '{{ stat.month }}',
+        {% endfor %}
+    ],
+    datasets: [{
+        label: 'QR Codes créés',
+        data: [
+            {% for stat in monthly_stats reversed %}
+            {{ stat.count }},
+            {% endfor %}
+        ],
+        backgroundColor: 'rgba(76, 175, 80, 0.2)',
+        borderColor: 'rgba(76, 175, 80, 1)',
+        borderWidth: 2,
+        fill: true
+    }]
+};
+
+new Chart(monthlyCtx, {
+    type: 'line',
+    data: monthlyData,
+    options: {
+        responsive: true,
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

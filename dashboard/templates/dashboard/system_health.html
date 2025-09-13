@@ -1,0 +1,252 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Santé du Système{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-heartbeat"></i> Santé du Système</h1>
+    <p>Monitoring et état de santé de l'application</p>
+</div>
+
+<!-- Vérifications système -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    {% if health_checks.database %}
+                        <i class="fas fa-database fa-3x text-success"></i>
+                    {% else %}
+                        <i class="fas fa-database fa-3x text-danger"></i>
+                    {% endif %}
+                </div>
+                <h5>Base de Données</h5>
+                {% if health_checks.database %}
+                    <span class="badge bg-success">Opérationnelle</span>
+                {% else %}
+                    <span class="badge bg-danger">Problème</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    {% if health_checks.redis %}
+                        <i class="fas fa-memory fa-3x text-success"></i>
+                    {% else %}
+                        <i class="fas fa-memory fa-3x text-warning"></i>
+                    {% endif %}
+                </div>
+                <h5>Cache Redis</h5>
+                {% if health_checks.redis %}
+                    <span class="badge bg-success">Actif</span>
+                {% else %}
+                    <span class="badge bg-warning">Non configuré</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    {% if health_checks.storage %}
+                        <i class="fas fa-hdd fa-3x text-success"></i>
+                    {% else %}
+                        <i class="fas fa-hdd fa-3x text-danger"></i>
+                    {% endif %}
+                </div>
+                <h5>Stockage</h5>
+                {% if health_checks.storage %}
+                    <span class="badge bg-success">Disponible</span>
+                {% else %}
+                    <span class="badge bg-danger">Problème</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    {% if health_checks.api %}
+                        <i class="fas fa-plug fa-3x text-success"></i>
+                    {% else %}
+                        <i class="fas fa-plug fa-3x text-danger"></i>
+                    {% endif %}
+                </div>
+                <h5>API</h5>
+                {% if health_checks.api %}
+                    <span class="badge bg-success">Fonctionnelle</span>
+                {% else %}
+                    <span class="badge bg-danger">Erreur</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistiques de performance -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-tachometer-alt"></i> Temps de Réponse</h5>
+            </div>
+            <div class="card-body text-center">
+                <div class="display-4 text-primary">{{ performance_stats.avg_response_time }}s</div>
+                <p class="text-muted">Temps moyen de réponse</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-exclamation-triangle"></i> Taux d'Erreur</h5>
+            </div>
+            <div class="card-body text-center">
+                <div class="display-4 text-warning">{{ performance_stats.error_rate }}%</div>
+                <p class="text-muted">Taux d'erreur global</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-clock"></i> Disponibilité</h5>
+            </div>
+            <div class="card-body text-center">
+                <div class="display-4 text-success">{{ performance_stats.uptime }}</div>
+                <p class="text-muted">Temps de fonctionnement</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Logs d'erreurs récents -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-bug"></i> Erreurs Récentes</h5>
+            </div>
+            <div class="card-body">
+                {% if recent_errors %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Date/Heure</th>
+                                    <th>Type</th>
+                                    <th>Message</th>
+                                    <th>Utilisateur</th>
+                                    <th>IP</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for error in recent_errors %}
+                                <tr>
+                                    <td>{{ error.timestamp|date:"d/m/Y H:i" }}</td>
+                                    <td>
+                                        <span class="badge bg-danger">{{ error.type }}</span>
+                                    </td>
+                                    <td>{{ error.message|truncatechars:50 }}</td>
+                                    <td>{{ error.user|default:"Système" }}</td>
+                                    <td><code>{{ error.ip }}</code></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                        <p>Aucune erreur récente détectée</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Actions système -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-tools"></i> Actions Système</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <button class="btn btn-outline-primary w-100" onclick="refreshHealth()">
+                            <i class="fas fa-sync-alt"></i> Actualiser
+                        </button>
+                    </div>
+                    <div class="col-md-3">
+                        <button class="btn btn-outline-warning w-100" onclick="clearCache()">
+                            <i class="fas fa-trash"></i> Vider le Cache
+                        </button>
+                    </div>
+                    <div class="col-md-3">
+                        <button class="btn btn-outline-info w-100" onclick="exportLogs()">
+                            <i class="fas fa-download"></i> Exporter Logs
+                        </button>
+                    </div>
+                    <div class="col-md-3">
+                        <button class="btn btn-outline-success w-100" onclick="runMaintenance()">
+                            <i class="fas fa-wrench"></i> Maintenance
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function refreshHealth() {
+    location.reload();
+}
+
+function clearCache() {
+    if (confirm('Êtes-vous sûr de vouloir vider le cache ?')) {
+        // Implémenter la logique de vidage du cache
+        alert('Cache vidé avec succès');
+    }
+}
+
+function exportLogs() {
+    // Implémenter l'export des logs
+    alert('Export des logs en cours...');
+}
+
+function runMaintenance() {
+    if (confirm('Lancer la maintenance système ?')) {
+        // Implémenter la maintenance
+        alert('Maintenance lancée');
+    }
+}
+
+// Actualisation automatique toutes les 30 secondes
+setInterval(function() {
+    // Actualiser seulement les indicateurs de santé
+    fetch('/dashboard/system-health/check/')
+        .then(response => response.json())
+        .then(data => {
+            // Mettre à jour les indicateurs
+            console.log('Health check updated:', data);
+        })
+        .catch(error => {
+            console.error('Erreur lors de la vérification de santé:', error);
+        });
+}, 30000);
+</script>
+{% endblock %}

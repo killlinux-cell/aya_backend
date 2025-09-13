@@ -1,0 +1,31 @@
+# Django Core
+Django==5.2.6
+djangorestframework==3.16.1
+djangorestframework-simplejwt==5.5.1
+django-cors-headers==4.8.0
+
+# Configuration & Environment
+python-decouple==3.8
+
+# Image Processing & QR Codes
+Pillow==10.4.0
+qrcode[pil]==8.0
+
+# Database (SQLite is included with Python)
+# For production, you might want to add:
+# psycopg2-binary==2.9.9  # PostgreSQL
+# mysqlclient==2.2.0      # MySQL
+
+# Development & Testing (optional)
+# pytest==7.4.3
+# pytest-django==4.7.0
+# coverage==7.3.2
+
+# Production (optional)
+# gunicorn==21.2.0
+# whitenoise==6.6.0
+# django-environ==0.11.2
+
+# Security (optional)
+# django-ratelimit==4.1.0
+# django-axes==6.1.1
