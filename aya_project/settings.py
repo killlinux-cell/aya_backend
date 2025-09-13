@@ -25,9 +25,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = config('SECRET_KEY', default='django-insecure-(xiy56oj+q9vlkvn0m-2ade0my=d!j4s*pqt50wh9#n$o9d&6w')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config('DEBUG', default=True, cast=bool)
+DEBUG = config('DEBUG', default=False, cast=bool)
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,10.0.2.2,192.168.0.109,0.0.0.0').split(',')
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,10.0.2.2,192.168.0.109,0.0.0.0,aya-plus.orapide.shop,199.231.191.234').split(',')
 
 
 # Application definition
@@ -147,13 +147,13 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 # Pour voir les emails dans la console au lieu de les envoyer
 
 # Configuration Email pour la production (décommentez quand vous voulez envoyer de vrais emails)
-# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-# EMAIL_HOST = 'smtp.gmail.com'  # ou votre serveur SMTP
-# EMAIL_PORT = 587
-# EMAIL_USE_TLS = True
-# EMAIL_HOST_USER = 'votre-email@gmail.com'
-# EMAIL_HOST_PASSWORD = 'votre-mot-de-passe-app'
-# DEFAULT_FROM_EMAIL = 'votre-email@gmail.com'
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'  
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'anakoisrael352@gmail.com'
+EMAIL_HOST_PASSWORD = 'waczjtbwmpzrrxmx'
+DEFAULT_FROM_EMAIL = 'anakoisrael352@gmail.com'
 
 # REST Framework Configuration
 REST_FRAMEWORK = {
@@ -204,12 +204,28 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:8080",
     "http://127.0.0.1:8080",
     "http://10.0.2.2:8000",  # Android emulator
+    "https://aya-plus.orapide.shop",
+    "http://199.231.191.234",
+    "https://199.231.191.234",
 ]
 
 CORS_ALLOW_CREDENTIALS = True
 
 # Allow all origins in development for Flutter
-CORS_ALLOW_ALL_ORIGINS = True
+# CORS_ALLOW_ALL_ORIGINS = True  # Désactivé en production pour la sécurité
 
 # Custom User Model
 AUTH_USER_MODEL = 'authentication.User'
+
+# Configuration de sécurité pour la production
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = 'DENY'
+SECURE_HSTS_SECONDS = 31536000
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True
+
+# Configuration pour HTTPS (décommentez si vous utilisez HTTPS)
+# SECURE_SSL_REDIRECT = True
+# SESSION_COOKIE_SECURE = True
+# CSRF_COOKIE_SECURE = True
