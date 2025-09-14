@@ -47,6 +47,10 @@ class QRCodeValidationView(APIView):
                     points_earned=qr_code.points
                 )
                 
+                # Désactiver le QR code après le premier scan
+                qr_code.is_active = False
+                qr_code.save(update_fields=['is_active'])
+                
                 # Mettre à jour les points de l'utilisateur
                 user.available_points += qr_code.points
                 user.collected_qr_codes += 1
@@ -111,6 +115,10 @@ class QRCodeValidateAndClaimView(APIView):
                 qr_code=qr_code,
                 points_earned=qr_code.points
             )
+            
+            # Désactiver le QR code après le premier scan
+            qr_code.is_active = False
+            qr_code.save(update_fields=['is_active'])
             
             # Mettre à jour les points de l'utilisateur (seulement pour les points, pas les tickets)
             if qr_code.prize_type == 'points':
