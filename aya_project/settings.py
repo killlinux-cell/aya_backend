@@ -135,7 +135,12 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+STATIC_ROOT = '/var/www/aya_backend/static/'
+
+# Media files
+MEDIA_URL = '/media/'
+MEDIA_ROOT = '/var/www/aya_backend/media/'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -216,6 +221,17 @@ CORS_ALLOW_CREDENTIALS = True
 
 # Custom User Model
 AUTH_USER_MODEL = 'authentication.User'
+
+# Configuration d'authentification
+AUTHENTICATION_BACKENDS = [
+    'authentication.backends.EmailBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
+
+# Configuration pour utiliser l'email comme nom d'utilisateur
+LOGIN_URL = '/accounts/login/'
+LOGIN_REDIRECT_URL = '/dashboard/'
+LOGOUT_REDIRECT_URL = '/'
 
 # Configuration de sécurité pour la production
 SECURE_BROWSER_XSS_FILTER = True
