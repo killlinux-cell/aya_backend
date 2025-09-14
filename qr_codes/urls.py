@@ -1,7 +1,24 @@
 from django.urls import path
+from django.http import JsonResponse
 from . import views
 
+def api_root(request):
+    """Vue racine de l'API qui retourne les endpoints disponibles"""
+    return JsonResponse({
+        'message': 'Aya+ API v1.0.0',
+        'endpoints': {
+            'authentication': '/api/auth/',
+            'qr_codes': '/api/validate/',
+            'games': '/api/games/',
+            'exchanges': '/api/exchanges/',
+            'stats': '/api/stats/',
+        },
+        'documentation': 'https://aya-plus.orapide.shop'
+    })
+
 urlpatterns = [
+    # Vue racine de l'API
+    path('', api_root, name='api_root'),
     # QR Codes
     path('validate/', views.QRCodeValidationView.as_view(), name='qr_validate'),
     path('validate-and-claim/', views.QRCodeValidateAndClaimView.as_view(), name='qr_validate_and_claim'),
