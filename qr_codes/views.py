@@ -93,20 +93,20 @@ class QRCodeValidateAndClaimView(APIView):
         try:
             qr_code = QRCode.objects.get(code=code)
             
+            # Vérifier si l'utilisateur a déjà scanné ce QR code (AVANT de vérifier is_valid)
+            if UserQRCode.objects.filter(user=user, qr_code=qr_code).exists():
+                return Response({
+                    'success': False,
+                    'error': 'Ce QR code a déjà été scanné',
+                    'error_type': 'already_used'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
             # Vérifier si le QR code est valide
             if not qr_code.is_valid():
                 return Response({
                     'success': False,
                     'error': 'QR code expiré ou inactif',
                     'error_type': 'expired'
-                }, status=status.HTTP_400_BAD_REQUEST)
-            
-            # Vérifier si l'utilisateur a déjà scanné ce QR code
-            if UserQRCode.objects.filter(user=user, qr_code=qr_code).exists():
-                return Response({
-                    'success': False,
-                    'error': 'Ce QR code a déjà été scanné',
-                    'error_type': 'already_used'
                 }, status=status.HTTP_400_BAD_REQUEST)
             
             # Créer l'association utilisateur-QR code
