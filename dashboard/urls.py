@@ -29,7 +29,11 @@ urlpatterns = [
     # Gestion des vendeurs
     path('vendors/', views.vendors_management, name='vendors'),
     path('vendors/create/', views.create_vendor, name='create_vendor'),
+    path('vendors/create-from-existing/', views.create_vendor_from_existing_user, name='create_vendor_from_existing'),
+    path('vendors/search-users/', views.search_users_for_vendor, name='search_users_for_vendor'),
+    path('vendors/map/', views.vendors_map, name='vendors_map'),
     path('vendors/<uuid:vendor_id>/update-status/', views.update_vendor_status, name='update_vendor_status'),
+    path('vendors/<uuid:vendor_id>/update-location/', views.update_vendor_location, name='update_vendor_location'),
     
     # Gestion des jeux
     path('games/', views.games_management, name='games'),

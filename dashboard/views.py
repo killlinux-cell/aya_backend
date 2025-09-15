@@ -563,6 +563,12 @@ def create_vendor(request):
             business_address = request.POST.get('business_address')
             phone_number = request.POST.get('phone_number')
             
+            # Données de localisation
+            latitude = request.POST.get('latitude')
+            longitude = request.POST.get('longitude')
+            city = request.POST.get('city')
+            region = request.POST.get('region')
+            
             # Créer l'utilisateur
             user = User.objects.create_user(
                 email=email,
@@ -571,14 +577,18 @@ def create_vendor(request):
                 password=password
             )
             
-            # Créer le profil vendeur
+            # Créer le profil vendeur (le vendor_code sera généré automatiquement)
             vendor = Vendor.objects.create(
                 user=user,
                 business_name=business_name,
                 business_address=business_address,
                 phone_number=phone_number,
                 status='active',
-                created_by=request.user
+                created_by=request.user,
+                latitude=float(latitude) if latitude else None,
+                longitude=float(longitude) if longitude else None,
+                city=city,
+                region=region,
             )
             
             messages.success(request, f'Vendeur {business_name} créé avec succès!')
@@ -588,6 +598,96 @@ def create_vendor(request):
             messages.error(request, f'Erreur lors de la création du vendeur: {str(e)}')
     
     return render(request, 'dashboard/create_vendor.html')
+
+
+@login_required
+@user_passes_test(is_admin)
+def create_vendor_from_existing_user(request):
+    """Créer un vendeur à partir d'un utilisateur existant"""
+    
+    if request.method == 'POST':
+        try:
+            user_id = request.POST.get('user_id')
+            business_name = request.POST.get('business_name')
+            business_address = request.POST.get('business_address')
+            phone_number = request.POST.get('phone_number')
+            
+            # Données de localisation
+            latitude = request.POST.get('latitude')
+            longitude = request.POST.get('longitude')
+            city = request.POST.get('city')
+            region = request.POST.get('region')
+            
+            # Récupérer l'utilisateur existant
+            user = User.objects.get(id=user_id)
+            
+            # Vérifier que l'utilisateur n'est pas déjà vendeur
+            if Vendor.objects.filter(user=user).exists():
+                messages.error(request, 'Cet utilisateur est déjà vendeur!')
+                return redirect('dashboard:create_vendor_from_existing')
+            
+            # Créer le profil vendeur (le vendor_code sera généré automatiquement)
+            vendor = Vendor.objects.create(
+                user=user,
+                business_name=business_name,
+                business_address=business_address,
+                phone_number=phone_number,
+                status='active',
+                created_by=request.user,
+                latitude=float(latitude) if latitude else None,
+                longitude=float(longitude) if longitude else None,
+                city=city,
+                region=region,
+            )
+            
+            messages.success(request, f'Vendeur {business_name} créé à partir de {user.email}!')
+            return redirect('dashboard:vendors')
+            
+        except User.DoesNotExist:
+            messages.error(request, 'Utilisateur non trouvé!')
+        except Exception as e:
+            messages.error(request, f'Erreur lors de la création du vendeur: {str(e)}')
+    
+    # Récupérer tous les utilisateurs qui ne sont pas déjà vendeurs
+    existing_vendor_user_ids = Vendor.objects.values_list('user_id', flat=True)
+    available_users = User.objects.exclude(id__in=existing_vendor_user_ids).order_by('email')
+    
+    context = {
+        'available_users': available_users,
+    }
+    
+    return render(request, 'dashboard/create_vendor_from_existing.html', context)
+
+
+@login_required
+@user_passes_test(is_admin)
+def search_users_for_vendor(request):
+    """API pour rechercher des utilisateurs pour créer un vendeur"""
+    
+    query = request.GET.get('q', '')
+    
+    if len(query) < 2:
+        return JsonResponse({'users': []})
+    
+    # Récupérer les utilisateurs qui ne sont pas déjà vendeurs
+    existing_vendor_user_ids = Vendor.objects.values_list('user_id', flat=True)
+    users = User.objects.exclude(id__in=existing_vendor_user_ids).filter(
+        Q(first_name__icontains=query) |
+        Q(last_name__icontains=query) |
+        Q(email__icontains=query)
+    )[:10]
+    
+    users_data = []
+    for user in users:
+        users_data.append({
+            'id': user.id,
+            'email': user.email,
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'display_name': f"{user.first_name} {user.last_name} ({user.email})"
+        })
+    
+    return JsonResponse({'users': users_data})
 
 
 @login_required
@@ -834,3 +934,88 @@ def bulk_operations(request):
     }
     
     return render(request, 'dashboard/bulk_operations.html', context)
+
+
+@login_required
+@user_passes_test(is_admin)
+def vendors_map(request):
+    """Carte des vendeurs en Côte d'Ivoire"""
+    
+    # Récupérer tous les vendeurs avec leurs coordonnées
+    vendors = Vendor.objects.filter(
+        latitude__isnull=False,
+        longitude__isnull=False,
+        status='active'
+    ).select_related('user')
+    
+    # Statistiques par région
+    region_stats = vendors.values('region').annotate(
+        count=Count('id')
+    ).order_by('-count')
+    
+    # Statistiques par ville
+    city_stats = vendors.values('city').annotate(
+        count=Count('id')
+    ).order_by('-count')[:10]
+    
+    # Préparer les données pour la carte
+    vendors_data = []
+    for vendor in vendors:
+        vendors_data.append({
+            'id': str(vendor.id),
+            'name': vendor.business_name,
+            'address': vendor.business_address,
+            'phone': vendor.phone_number,
+            'city': vendor.city,
+            'region': vendor.region,
+            'latitude': float(vendor.latitude),
+            'longitude': float(vendor.longitude),
+            'status': vendor.status,
+            'created_at': vendor.created_at.strftime('%d/%m/%Y'),
+        })
+    
+    context = {
+        'vendors': vendors,
+        'vendors_data': json.dumps(vendors_data),
+        'region_stats': region_stats,
+        'city_stats': city_stats,
+        'total_vendors': vendors.count(),
+    }
+    
+    return render(request, 'dashboard/vendors_map.html', context)
+
+
+@login_required
+@user_passes_test(is_admin)
+def update_vendor_location(request, vendor_id):
+    """Mettre à jour la localisation d'un vendeur"""
+    
+    try:
+        vendor = Vendor.objects.get(id=vendor_id)
+        
+        if request.method == 'POST':
+            latitude = request.POST.get('latitude')
+            longitude = request.POST.get('longitude')
+            city = request.POST.get('city')
+            region = request.POST.get('region')
+            
+            if latitude and longitude:
+                vendor.latitude = float(latitude)
+                vendor.longitude = float(longitude)
+            
+            if city:
+                vendor.city = city
+            if region:
+                vendor.region = region
+                
+            vendor.save()
+            
+            messages.success(request, f'Localisation de {vendor.business_name} mise à jour!')
+            return redirect('dashboard:vendors_map')
+            
+    except Vendor.DoesNotExist:
+        messages.error(request, 'Vendeur non trouvé')
+    except Exception as e:
+        messages.error(request, f'Erreur: {str(e)}')
+    
+    return redirect('dashboard:vendors_map')

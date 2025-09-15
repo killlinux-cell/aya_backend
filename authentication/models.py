@@ -137,6 +137,13 @@ class Vendor(models.Model):
     phone_number = models.CharField(max_length=20)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
     
+    # Localisation
+    latitude = models.DecimalField(max_digits=10, decimal_places=7, null=True, blank=True, help_text="Latitude GPS")
+    longitude = models.DecimalField(max_digits=10, decimal_places=7, null=True, blank=True, help_text="Longitude GPS")
+    city = models.CharField(max_length=100, blank=True, help_text="Ville")
+    region = models.CharField(max_length=100, blank=True, help_text="Région")
+    country = models.CharField(max_length=100, default="Côte d'Ivoire", help_text="Pays")
+    
     # Métadonnées
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -158,3 +165,20 @@ class Vendor(models.Model):
     @property
     def full_name(self):
         return f"{self.user.first_name} {self.user.last_name}".strip() or self.user.email
+    
+    def save(self, *args, **kwargs):
+        if not self.vendor_code:
+            # Générer un code vendeur unique
+            import random
+            import string
+            
+            while True:
+                # Format: VENDOR_XXXXXX (6 caractères alphanumériques)
+                code = f"VENDOR_{''.join(random.choices(string.ascii_uppercase + string.digits, k=6))}"
+                
+                # Vérifier l'unicité
+                if not Vendor.objects.filter(vendor_code=code).exists():
+                    self.vendor_code = code
+                    break
+        
+        super().save(*args, **kwargs)

@@ -1,0 +1,659 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+
+{% block title %}Créer un vendeur à partir d'un utilisateur existant{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+    .search-container {
+        position: relative;
+        margin-bottom: 20px;
+    }
+    
+    .search-results {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: white;
+        border: 1px solid #ddd;
+        border-top: none;
+        border-radius: 0 0 8px 8px;
+        max-height: 300px;
+        overflow-y: auto;
+        z-index: 1000;
+        display: none;
+    }
+    
+    .search-result-item {
+        padding: 12px 16px;
+        border-bottom: 1px solid #eee;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+    
+    .search-result-item:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .search-result-item:last-child {
+        border-bottom: none;
+    }
+    
+    .user-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .user-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #4CAF50, #66BB6A);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        font-size: 16px;
+    }
+    
+    .user-details h6 {
+        margin: 0;
+        font-weight: 600;
+        color: #333;
+    }
+    
+    .user-details p {
+        margin: 0;
+        color: #666;
+        font-size: 14px;
+    }
+    
+    .selected-user {
+        background-color: #e8f5e8;
+        border: 2px solid #4CAF50;
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 20px;
+        display: none;
+    }
+    
+    .selected-user.show {
+        display: block;
+    }
+    
+    .remove-selection {
+        background: none;
+        border: none;
+        color: #dc3545;
+        cursor: pointer;
+        font-size: 18px;
+        padding: 0;
+        margin-left: auto;
+    }
+    
+    .form-section {
+        background: white;
+        border-radius: 12px;
+        padding: 24px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+    }
+    
+    .section-title {
+        color: #4CAF50;
+        font-size: 20px;
+        font-weight: 600;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .form-group {
+        margin-bottom: 20px;
+    }
+    
+    .form-label {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 8px;
+        display: block;
+    }
+    
+    .form-control {
+        width: 100%;
+        padding: 12px 16px;
+        border: 2px solid #e1e5e9;
+        border-radius: 8px;
+        font-size: 16px;
+        transition: border-color 0.3s;
+    }
+    
+    .form-control:focus {
+        outline: none;
+        border-color: #4CAF50;
+        box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, #4CAF50, #66BB6A);
+        border: none;
+        color: white;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+    }
+    
+    .btn-secondary {
+        background: #6c757d;
+        border: none;
+        color: white;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-block;
+        margin-right: 10px;
+    }
+    
+    .btn-secondary:hover {
+        background: #5a6268;
+        color: white;
+        text-decoration: none;
+    }
+    
+    .loading {
+        text-align: center;
+        padding: 20px;
+        color: #666;
+    }
+    
+    .no-results {
+        text-align: center;
+        padding: 20px;
+        color: #666;
+        font-style: italic;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0">
+                    <i class="fas fa-user-plus text-success me-2"></i>
+                    Créer un vendeur à partir d'un utilisateur existant
+                </h2>
+                <a href="{% url 'dashboard:vendors' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Retour
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="form-section">
+                <h3 class="section-title">
+                    <i class="fas fa-search"></i>
+                    Rechercher un utilisateur
+                </h3>
+                
+                <div class="search-container">
+                    <input type="text" 
+                           id="userSearch" 
+                           class="form-control" 
+                           placeholder="Tapez le nom, prénom ou email de l'utilisateur..."
+                           autocomplete="off">
+                    <div id="searchResults" class="search-results"></div>
+                </div>
+                
+                <div id="selectedUser" class="selected-user">
+                    <div class="d-flex align-items-center">
+                        <div class="user-info">
+                            <div class="user-avatar" id="selectedUserAvatar"></div>
+                            <div class="user-details">
+                                <h6 id="selectedUserName"></h6>
+                                <p id="selectedUserEmail"></p>
+                            </div>
+                        </div>
+                        <button type="button" class="remove-selection" onclick="clearSelection()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <form method="post" id="vendorForm" style="display: none;">
+                {% csrf_token %}
+                <input type="hidden" id="selectedUserId" name="user_id">
+                
+                <div class="form-section">
+                    <h3 class="section-title">
+                        <i class="fas fa-store"></i>
+                        Informations du vendeur
+                    </h3>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="business_name" class="form-label">Nom de l'entreprise *</label>
+                                <input type="text" 
+                                       id="business_name" 
+                                       name="business_name" 
+                                       class="form-control" 
+                                       required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="phone_number" class="form-label">Numéro de téléphone *</label>
+                                <input type="tel" 
+                                       id="phone_number" 
+                                       name="phone_number" 
+                                       class="form-control" 
+                                       required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="business_address" class="form-label">Adresse de l'entreprise *</label>
+                        <textarea id="business_address" 
+                                  name="business_address" 
+                                  class="form-control" 
+                                  rows="3" 
+                                  required></textarea>
+                    </div>
+                    
+                    <hr>
+                    <h6 class="text-primary mb-3">
+                        <i class="fas fa-map-marker-alt me-2"></i>Localisation (Optionnel)
+                    </h6>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="city" class="form-label">Ville</label>
+                                <input type="text" 
+                                       id="city" 
+                                       name="city" 
+                                       class="form-control" 
+                                       placeholder="Ex: Abidjan">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="region" class="form-label">Région</label>
+                                <select id="region" name="region" class="form-control">
+                                    <option value="">Sélectionner une région</option>
+                                    <option value="Abidjan">Abidjan</option>
+                                    <option value="Bas-Sassandra">Bas-Sassandra</option>
+                                    <option value="Comoé">Comoé</option>
+                                    <option value="Denguélé">Denguélé</option>
+                                    <option value="Gôh-Djiboua">Gôh-Djiboua</option>
+                                    <option value="Lacs">Lacs</option>
+                                    <option value="Lagunes">Lagunes</option>
+                                    <option value="Montagnes">Montagnes</option>
+                                    <option value="Sassandra-Marahoué">Sassandra-Marahoué</option>
+                                    <option value="Savanes">Savanes</option>
+                                    <option value="Vallée du Bandama">Vallée du Bandama</option>
+                                    <option value="Woroba">Woroba</option>
+                                    <option value="Yamoussoukro">Yamoussoukro</option>
+                                    <option value="Zanzan">Zanzan</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="latitude" class="form-label">Latitude GPS</label>
+                                <div class="input-group">
+                                    <input type="number" 
+                                           step="any" 
+                                           id="latitude" 
+                                           name="latitude" 
+                                           class="form-control" 
+                                           placeholder="Ex: 5.3600">
+                                    <button type="button" class="btn btn-outline-primary" onclick="getCurrentLocation()" id="locationBtn">
+                                        <i class="fas fa-map-marker-alt"></i> Ma position
+                                    </button>
+                                </div>
+                                <small class="form-text text-muted">Coordonnée GPS pour la carte</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="longitude" class="form-label">Longitude GPS</label>
+                                <input type="number" 
+                                       step="any" 
+                                       id="longitude" 
+                                       name="longitude" 
+                                       class="form-control" 
+                                       placeholder="Ex: -4.0083">
+                                <small class="form-text text-muted">Coordonnée GPS pour la carte</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Carte de prévisualisation -->
+                    <div class="form-group" id="mapPreview" style="display: none;">
+                        <label class="form-label">Prévisualisation de la position</label>
+                        <div id="miniMap" style="height: 200px; border-radius: 8px; border: 1px solid #ddd;"></div>
+                        <small class="form-text text-muted">Carte de prévisualisation de la position du vendeur</small>
+                    </div>
+                    
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="{% url 'dashboard:vendors' %}" class="btn btn-secondary">Annuler</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Créer le vendeur
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="form-section">
+                <h3 class="section-title">
+                    <i class="fas fa-info-circle"></i>
+                    Instructions
+                </h3>
+                <div class="alert alert-info">
+                    <h6><i class="fas fa-lightbulb me-2"></i>Comment procéder :</h6>
+                    <ol class="mb-0">
+                        <li>Recherchez un utilisateur existant dans la barre de recherche</li>
+                        <li>Sélectionnez l'utilisateur dans les résultats</li>
+                        <li>Remplissez les informations de l'entreprise</li>
+                        <li>Cliquez sur "Créer le vendeur"</li>
+                    </ol>
+                </div>
+                
+                <div class="alert alert-warning">
+                    <h6><i class="fas fa-exclamation-triangle me-2"></i>Note importante :</h6>
+                    <p class="mb-0">
+                        Seuls les utilisateurs qui ne sont pas déjà vendeurs apparaîtront dans les résultats de recherche.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+let searchTimeout;
+
+document.getElementById('userSearch').addEventListener('input', function(e) {
+    const query = e.target.value.trim();
+    
+    clearTimeout(searchTimeout);
+    
+    if (query.length < 2) {
+        document.getElementById('searchResults').style.display = 'none';
+        return;
+    }
+    
+    searchTimeout = setTimeout(() => {
+        searchUsers(query);
+    }, 300);
+});
+
+function searchUsers(query) {
+    const resultsContainer = document.getElementById('searchResults');
+    resultsContainer.innerHTML = '<div class="loading">Recherche en cours...</div>';
+    resultsContainer.style.display = 'block';
+    
+    fetch(`{% url 'dashboard:search_users_for_vendor' %}?q=${encodeURIComponent(query)}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.users.length === 0) {
+                resultsContainer.innerHTML = '<div class="no-results">Aucun utilisateur trouvé</div>';
+            } else {
+                resultsContainer.innerHTML = data.users.map(user => `
+                    <div class="search-result-item" onclick="selectUser('${user.id}', '${user.first_name}', '${user.last_name}', '${user.email}')">
+                        <div class="user-info">
+                            <div class="user-avatar">${user.first_name.charAt(0).toUpperCase()}${user.last_name.charAt(0).toUpperCase()}</div>
+                            <div class="user-details">
+                                <h6>${user.first_name} ${user.last_name}</h6>
+                                <p>${user.email}</p>
+                            </div>
+                        </div>
+                        <div class="text-muted">
+                            <i class="fas fa-arrow-right"></i>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        })
+        .catch(error => {
+            resultsContainer.innerHTML = '<div class="no-results">Erreur lors de la recherche</div>';
+        });
+}
+
+function selectUser(userId, firstName, lastName, email) {
+    console.log('Sélection de l\'utilisateur:', userId, firstName, lastName, email);
+    
+    document.getElementById('selectedUserId').value = userId;
+    document.getElementById('selectedUserAvatar').textContent = firstName.charAt(0).toUpperCase() + lastName.charAt(0).toUpperCase();
+    document.getElementById('selectedUserName').textContent = `${firstName} ${lastName}`;
+    document.getElementById('selectedUserEmail').textContent = email;
+    
+    document.getElementById('selectedUser').classList.add('show');
+    document.getElementById('vendorForm').style.display = 'block';
+    document.getElementById('searchResults').style.display = 'none';
+    document.getElementById('userSearch').value = '';
+    
+    // Scroll vers le formulaire
+    document.getElementById('vendorForm').scrollIntoView({ behavior: 'smooth' });
+}
+
+function clearSelection() {
+    document.getElementById('selectedUser').classList.remove('show');
+    document.getElementById('vendorForm').style.display = 'none';
+    document.getElementById('selectedUserId').value = '';
+}
+
+// Fermer les résultats de recherche en cliquant ailleurs
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.search-container')) {
+        document.getElementById('searchResults').style.display = 'none';
+    }
+});
+
+// ===== GÉOLOCALISATION =====
+let miniMap = null;
+let currentMarker = null;
+
+// Fonction pour obtenir la position actuelle
+function getCurrentLocation() {
+    const locationBtn = document.getElementById('locationBtn');
+    const originalText = locationBtn.innerHTML;
+    
+    locationBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Localisation...';
+    locationBtn.disabled = true;
+    
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            function(position) {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+                
+                // Remplir les champs
+                document.getElementById('latitude').value = lat.toFixed(6);
+                document.getElementById('longitude').value = lng.toFixed(6);
+                
+                // Mettre à jour la carte de prévisualisation
+                updateMapPreview(lat, lng);
+                
+                // Remplir automatiquement la ville et région si possible
+                reverseGeocode(lat, lng);
+                
+                locationBtn.innerHTML = '<i class="fas fa-check"></i> Position trouvée';
+                locationBtn.classList.remove('btn-outline-primary');
+                locationBtn.classList.add('btn-success');
+                
+                setTimeout(() => {
+                    locationBtn.innerHTML = originalText;
+                    locationBtn.disabled = false;
+                    locationBtn.classList.remove('btn-success');
+                    locationBtn.classList.add('btn-outline-primary');
+                }, 2000);
+            },
+            function(error) {
+                console.error('Erreur de géolocalisation:', error);
+                let errorMessage = 'Impossible d\'obtenir votre position.';
+                
+                switch(error.code) {
+                    case error.PERMISSION_DENIED:
+                        errorMessage = 'Permission de géolocalisation refusée.';
+                        break;
+                    case error.POSITION_UNAVAILABLE:
+                        errorMessage = 'Position non disponible.';
+                        break;
+                    case error.TIMEOUT:
+                        errorMessage = 'Délai d\'attente dépassé.';
+                        break;
+                }
+                
+                alert('Erreur de géolocalisation: ' + errorMessage);
+                locationBtn.innerHTML = originalText;
+                locationBtn.disabled = false;
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 60000
+            }
+        );
+    } else {
+        alert('La géolocalisation n\'est pas supportée par ce navigateur.');
+        locationBtn.innerHTML = originalText;
+        locationBtn.disabled = false;
+    }
+}
+
+// Fonction pour mettre à jour la carte de prévisualisation
+function updateMapPreview(lat, lng) {
+    const mapPreview = document.getElementById('mapPreview');
+    const miniMapDiv = document.getElementById('miniMap');
+    
+    mapPreview.style.display = 'block';
+    
+    if (miniMap) {
+        miniMap.remove();
+    }
+    
+    miniMap = L.map('miniMap').setView([lat, lng], 13);
+    
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(miniMap);
+    
+    if (currentMarker) {
+        miniMap.removeLayer(currentMarker);
+    }
+    
+    currentMarker = L.marker([lat, lng]).addTo(miniMap)
+        .bindPopup('Position du vendeur')
+        .openPopup();
+}
+
+// Fonction pour le géocodage inverse (obtenir ville/région à partir des coordonnées)
+function reverseGeocode(lat, lng) {
+    // Utiliser l'API de géocodage inverse d'OpenStreetMap (Nominatim)
+    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.address) {
+                // Remplir automatiquement la ville
+                if (data.address.city || data.address.town || data.address.village) {
+                    document.getElementById('city').value = data.address.city || data.address.town || data.address.village;
+                }
+                
+                // Remplir automatiquement la région
+                if (data.address.state) {
+                    const regionSelect = document.getElementById('region');
+                    const regionValue = data.address.state;
+                    
+                    // Chercher une correspondance dans les options
+                    for (let option of regionSelect.options) {
+                        if (option.value.toLowerCase().includes(regionValue.toLowerCase()) || 
+                            regionValue.toLowerCase().includes(option.value.toLowerCase())) {
+                            regionSelect.value = option.value;
+                            break;
+                        }
+                    }
+                }
+            }
+        })
+        .catch(error => {
+            console.log('Géocodage inverse non disponible:', error);
+        });
+}
+
+// Écouter les changements dans les champs de coordonnées
+document.getElementById('latitude').addEventListener('input', function() {
+    const lat = parseFloat(this.value);
+    const lng = parseFloat(document.getElementById('longitude').value);
+    
+    if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
+        updateMapPreview(lat, lng);
+    }
+});
+
+document.getElementById('longitude').addEventListener('input', function() {
+    const lng = parseFloat(this.value);
+    const lat = parseFloat(document.getElementById('latitude').value);
+    
+    if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
+        updateMapPreview(lat, lng);
+    }
+});
+
+// Écouter les changements dans le champ ville pour suggérer des coordonnées
+document.getElementById('city').addEventListener('blur', function() {
+    const city = this.value.trim();
+    if (city && (!document.getElementById('latitude').value || !document.getElementById('longitude').value)) {
+        geocodeCity(city);
+    }
+});
+
+// Fonction pour géocoder une ville
+function geocodeCity(city) {
+    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(city + ', Côte d\'Ivoire')}&limit=1`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.length > 0) {
+                const lat = parseFloat(data[0].lat);
+                const lng = parseFloat(data[0].lon);
+                
+                document.getElementById('latitude').value = lat.toFixed(6);
+                document.getElementById('longitude').value = lng.toFixed(6);
+                updateMapPreview(lat, lng);
+            }
+        })
+        .catch(error => {
+            console.log('Géocodage de la ville non disponible:', error);
+        });
+}
+</script>
+{% endblock %}

@@ -68,9 +68,85 @@
                         <input type="tel" class="form-control" id="phone_number" name="phone_number" required>
                     </div>
 
+                    <hr>
+                    <h6 class="text-primary mb-3">
+                        <i class="fas fa-map-marker-alt me-2"></i>Localisation (Optionnel)
+                    </h6>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="city" class="form-label">Ville</label>
+                                <input type="text" class="form-control" id="city" name="city" placeholder="Ex: Abidjan">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="region" class="form-label">Région</label>
+                                <select class="form-control" id="region" name="region">
+                                    <option value="">Sélectionner une région</option>
+                                    <option value="Abidjan">Abidjan</option>
+                                    <option value="Bas-Sassandra">Bas-Sassandra</option>
+                                    <option value="Comoé">Comoé</option>
+                                    <option value="Denguélé">Denguélé</option>
+                                    <option value="Gôh-Djiboua">Gôh-Djiboua</option>
+                                    <option value="Lacs">Lacs</option>
+                                    <option value="Lagunes">Lagunes</option>
+                                    <option value="Montagnes">Montagnes</option>
+                                    <option value="Sassandra-Marahoué">Sassandra-Marahoué</option>
+                                    <option value="Savanes">Savanes</option>
+                                    <option value="Vallée du Bandama">Vallée du Bandama</option>
+                                    <option value="Woroba">Woroba</option>
+                                    <option value="Yamoussoukro">Yamoussoukro</option>
+                                    <option value="Zanzan">Zanzan</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="latitude" class="form-label">Latitude GPS</label>
+                                <div class="input-group">
+                                    <input type="number" step="any" class="form-control" id="latitude" name="latitude" placeholder="Ex: 5.3600">
+                                    <button type="button" class="btn btn-outline-primary" onclick="getCurrentLocation()" id="locationBtn">
+                                        <i class="fas fa-map-marker-alt"></i> Ma position
+                                    </button>
+                                </div>
+                                <small class="form-text text-muted">Coordonnée GPS pour la carte</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="longitude" class="form-label">Longitude GPS</label>
+                                <input type="number" step="any" class="form-control" id="longitude" name="longitude" placeholder="Ex: -4.0083">
+                                <small class="form-text text-muted">Coordonnée GPS pour la carte</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Carte de prévisualisation -->
+                    <div class="mb-3" id="mapPreview" style="display: none;">
+                        <label class="form-label">Prévisualisation de la position</label>
+                        <div id="miniMap" style="height: 200px; border-radius: 8px; border: 1px solid #ddd;"></div>
+                        <small class="form-text text-muted">Carte de prévisualisation de la position du vendeur</small>
+                    </div>
+
                     <div class="alert alert-info">
                         <i class="fas fa-info-circle"></i>
-                        <strong>Note :</strong> Le vendeur sera créé avec le statut "Actif" et pourra immédiatement se connecter à l'application.
+                        <strong>Note :</strong> Le vendeur sera créé avec le statut "Actif" et pourra immédiatement se connecter à l'application. 
+                        Les coordonnées GPS permettront d'afficher le vendeur sur la carte.
+                    </div>
+                    
+                    <div class="alert alert-warning">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <strong>Géolocalisation :</strong> 
+                        <ul class="mb-0 mt-2">
+                            <li>Cliquez sur "Ma position" pour obtenir automatiquement vos coordonnées GPS</li>
+                            <li>Ou saisissez manuellement les coordonnées du vendeur</li>
+                            <li>La carte de prévisualisation vous aidera à vérifier la position</li>
+                        </ul>
                     </div>
 
                     <div class="d-flex justify-content-end gap-2">
@@ -86,4 +162,185 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+let miniMap = null;
+let currentMarker = null;
+
+// Fonction pour obtenir la position actuelle
+function getCurrentLocation() {
+    const locationBtn = document.getElementById('locationBtn');
+    const originalText = locationBtn.innerHTML;
+    
+    locationBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Localisation...';
+    locationBtn.disabled = true;
+    
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            function(position) {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+                
+                // Remplir les champs
+                document.getElementById('latitude').value = lat.toFixed(6);
+                document.getElementById('longitude').value = lng.toFixed(6);
+                
+                // Mettre à jour la carte de prévisualisation
+                updateMapPreview(lat, lng);
+                
+                // Remplir automatiquement la ville et région si possible
+                reverseGeocode(lat, lng);
+                
+                locationBtn.innerHTML = '<i class="fas fa-check"></i> Position trouvée';
+                locationBtn.classList.remove('btn-outline-primary');
+                locationBtn.classList.add('btn-success');
+                
+                setTimeout(() => {
+                    locationBtn.innerHTML = originalText;
+                    locationBtn.disabled = false;
+                    locationBtn.classList.remove('btn-success');
+                    locationBtn.classList.add('btn-outline-primary');
+                }, 2000);
+            },
+            function(error) {
+                console.error('Erreur de géolocalisation:', error);
+                let errorMessage = 'Impossible d\'obtenir votre position.';
+                
+                switch(error.code) {
+                    case error.PERMISSION_DENIED:
+                        errorMessage = 'Permission de géolocalisation refusée.';
+                        break;
+                    case error.POSITION_UNAVAILABLE:
+                        errorMessage = 'Position non disponible.';
+                        break;
+                    case error.TIMEOUT:
+                        errorMessage = 'Délai d\'attente dépassé.';
+                        break;
+                }
+                
+                alert('Erreur de géolocalisation: ' + errorMessage);
+                locationBtn.innerHTML = originalText;
+                locationBtn.disabled = false;
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 60000
+            }
+        );
+    } else {
+        alert('La géolocalisation n\'est pas supportée par ce navigateur.');
+        locationBtn.innerHTML = originalText;
+        locationBtn.disabled = false;
+    }
+}
+
+// Fonction pour mettre à jour la carte de prévisualisation
+function updateMapPreview(lat, lng) {
+    const mapPreview = document.getElementById('mapPreview');
+    const miniMapDiv = document.getElementById('miniMap');
+    
+    mapPreview.style.display = 'block';
+    
+    if (miniMap) {
+        miniMap.remove();
+    }
+    
+    miniMap = L.map('miniMap').setView([lat, lng], 13);
+    
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(miniMap);
+    
+    if (currentMarker) {
+        miniMap.removeLayer(currentMarker);
+    }
+    
+    currentMarker = L.marker([lat, lng]).addTo(miniMap)
+        .bindPopup('Position du vendeur')
+        .openPopup();
+}
+
+// Fonction pour le géocodage inverse (obtenir ville/région à partir des coordonnées)
+function reverseGeocode(lat, lng) {
+    // Utiliser l'API de géocodage inverse d'OpenStreetMap (Nominatim)
+    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.address) {
+                // Remplir automatiquement la ville
+                if (data.address.city || data.address.town || data.address.village) {
+                    document.getElementById('city').value = data.address.city || data.address.town || data.address.village;
+                }
+                
+                // Remplir automatiquement la région
+                if (data.address.state) {
+                    const regionSelect = document.getElementById('region');
+                    const regionValue = data.address.state;
+                    
+                    // Chercher une correspondance dans les options
+                    for (let option of regionSelect.options) {
+                        if (option.value.toLowerCase().includes(regionValue.toLowerCase()) || 
+                            regionValue.toLowerCase().includes(option.value.toLowerCase())) {
+                            regionSelect.value = option.value;
+                            break;
+                        }
+                    }
+                }
+            }
+        })
+        .catch(error => {
+            console.log('Géocodage inverse non disponible:', error);
+        });
+}
+
+// Écouter les changements dans les champs de coordonnées
+document.getElementById('latitude').addEventListener('input', function() {
+    const lat = parseFloat(this.value);
+    const lng = parseFloat(document.getElementById('longitude').value);
+    
+    if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
+        updateMapPreview(lat, lng);
+    }
+});
+
+document.getElementById('longitude').addEventListener('input', function() {
+    const lng = parseFloat(this.value);
+    const lat = parseFloat(document.getElementById('latitude').value);
+    
+    if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
+        updateMapPreview(lat, lng);
+    }
+});
+
+// Écouter les changements dans le champ ville pour suggérer des coordonnées
+document.getElementById('city').addEventListener('blur', function() {
+    const city = this.value.trim();
+    if (city && (!document.getElementById('latitude').value || !document.getElementById('longitude').value)) {
+        geocodeCity(city);
+    }
+});
+
+// Fonction pour géocoder une ville
+function geocodeCity(city) {
+    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(city + ', Côte d\'Ivoire')}&limit=1`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.length > 0) {
+                const lat = parseFloat(data[0].lat);
+                const lng = parseFloat(data[0].lon);
+                
+                document.getElementById('latitude').value = lat.toFixed(6);
+                document.getElementById('longitude').value = lng.toFixed(6);
+                updateMapPreview(lat, lng);
+            }
+        })
+        .catch(error => {
+            console.log('Géocodage de la ville non disponible:', error);
+        });
+}
+</script>
 {% endblock %}
