@@ -388,3 +388,135 @@ class VendorLoginView(APIView):
             'success': False,
             'errors': serializer.errors
         }, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def available_vendors(request):
+    """Récupérer la liste des vendeurs disponibles"""
+    try:
+        # Récupérer tous les vendeurs actifs
+        vendors = Vendor.objects.filter(status='active').order_by('business_name')
+        
+        vendors_data = []
+        for vendor in vendors:
+            vendors_data.append({
+                'id': str(vendor.id),
+                'business_name': vendor.business_name,
+                'business_address': vendor.business_address,
+                'phone_number': vendor.phone_number,
+                'city': vendor.city or '',
+                'region': vendor.region or '',
+                'status': vendor.status,
+                'latitude': vendor.latitude,
+                'longitude': vendor.longitude,
+            })
+        
+        return Response({
+            'results': vendors_data,
+            'total': len(vendors_data),
+        })
+        
+    except Exception as e:
+        return Response({
+            'error': f'Erreur lors de la récupération des vendeurs: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def search_vendors(request):
+    """Rechercher des vendeurs par nom ou ville"""
+    try:
+        query = request.GET.get('q', '').strip()
+        
+        if not query:
+            return Response({
+                'results': [],
+                'total': 0,
+                'message': 'Terme de recherche requis'
+            })
+        
+        from django.db.models import Q
+        
+        # Recherche dans le nom d'entreprise, l'adresse, la ville et la région
+        vendors = Vendor.objects.filter(
+            Q(business_name__icontains=query) |
+            Q(business_address__icontains=query) |
+            Q(city__icontains=query) |
+            Q(region__icontains=query),
+            status='active'
+        ).order_by('business_name')
+        
+        vendors_data = []
+        for vendor in vendors:
+            vendors_data.append({
+                'id': str(vendor.id),
+                'business_name': vendor.business_name,
+                'business_address': vendor.business_address,
+                'phone_number': vendor.phone_number,
+                'city': vendor.city or '',
+                'region': vendor.region or '',
+                'status': vendor.status,
+                'latitude': vendor.latitude,
+                'longitude': vendor.longitude,
+            })
+        
+        return Response({
+            'results': vendors_data,
+            'total': len(vendors_data),
+            'query': query,
+        })
+        
+    except Exception as e:
+        return Response({
+            'error': f'Erreur lors de la recherche de vendeurs: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def vendor_exchange_history(request):
+    """Récupérer l'historique des échanges d'un vendeur"""
+    try:
+        # Vérifier que l'utilisateur est un vendeur
+        try:
+            vendor = Vendor.objects.get(user=request.user)
+        except Vendor.DoesNotExist:
+            return Response({
+                'error': 'Accès refusé. Compte vendeur requis.'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        # Récupérer les échanges validés par ce vendeur
+        from qr_codes.models import ExchangeRequest
+        exchanges = ExchangeRequest.objects.filter(
+            approved_by=request.user,
+            status='completed'
+        ).order_by('-completed_at')
+        
+        exchanges_data = []
+        for exchange in exchanges:
+            exchanges_data.append({
+                'id': str(exchange.id),
+                'user_id': str(exchange.user.id),
+                'user_name': exchange.user.full_name,
+                'user_email': exchange.user.email,
+                'points': exchange.points,
+                'exchange_code': exchange.exchange_code,
+                'status': exchange.status,
+                'created_at': exchange.created_at.isoformat(),
+                'approved_at': exchange.approved_at.isoformat() if exchange.approved_at else None,
+                'completed_at': exchange.completed_at.isoformat() if exchange.completed_at else None,
+                'notes': exchange.notes,
+            })
+        
+        return Response({
+            'results': exchanges_data,
+            'total': len(exchanges_data),
+            'vendor_name': vendor.business_name,
+        })
+        
+    except Exception as e:
+        return Response({
+            'error': f'Erreur lors de la récupération de l\'historique: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
