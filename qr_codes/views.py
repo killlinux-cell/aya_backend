@@ -556,9 +556,16 @@ class ExchangeTokenValidateView(APIView):
                 'success': True,
                 'exchange_request': {
                     'id': str(exchange_request.id),
+                    'user_id': str(exchange_request.user.id),
+                    'user_name': exchange_request.user.full_name,
+                    'user_email': exchange_request.user.email,
                     'points': exchange_request.points,
+                    'exchange_code': exchange_request.exchange_code,
                     'status': exchange_request.status,
-                    'completed_at': exchange_request.completed_at
+                    'created_at': exchange_request.created_at.isoformat(),
+                    'approved_at': exchange_request.approved_at.isoformat() if exchange_request.approved_at else None,
+                    'completed_at': exchange_request.completed_at.isoformat() if exchange_request.completed_at else None,
+                    'notes': exchange_request.notes,
                 },
                 'message': f'Échange de {exchange_token.points} points confirmé avec succès.'
             }, status=status.HTTP_200_OK)

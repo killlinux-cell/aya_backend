@@ -489,10 +489,14 @@ def search_vendors(request):
 def vendor_exchange_history(request):
     """Récupérer l'historique des échanges d'un vendeur"""
     try:
+        print(f'🔄 vendor_exchange_history: Requête reçue de {request.user.email}')
+        
         # Vérifier que l'utilisateur est un vendeur
         try:
             vendor = Vendor.objects.get(user=request.user)
+            print(f'🏪 vendor_exchange_history: Vendeur trouvé: {vendor.business_name}')
         except Vendor.DoesNotExist:
+            print(f'❌ vendor_exchange_history: Utilisateur {request.user.email} n\'est pas un vendeur')
             return Response({
                 'error': 'Accès refusé. Compte vendeur requis.'
             }, status=status.HTTP_403_FORBIDDEN)
@@ -503,6 +507,8 @@ def vendor_exchange_history(request):
             approved_by=request.user,
             status='completed'
         ).order_by('-completed_at')
+        
+        print(f'📊 vendor_exchange_history: Nombre d\'échanges trouvés: {exchanges.count()}')
         
         exchanges_data = []
         for exchange in exchanges:
@@ -519,6 +525,8 @@ def vendor_exchange_history(request):
                 'completed_at': exchange.completed_at.isoformat() if exchange.completed_at else None,
                 'notes': exchange.notes,
             })
+        
+        print(f'✅ vendor_exchange_history: Réponse envoyée avec {len(exchanges_data)} échanges')
         
         return Response({
             'results': exchanges_data,
