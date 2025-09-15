@@ -474,45 +474,26 @@ class ExchangeTokenCreateView(APIView):
     def post(self, request):
         serializer = ExchangeTokenCreateSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
-            user = request.user
-            points = serializer.validated_data['points']
-            
-            # Vérifier que l'utilisateur a suffisamment de points
-            if user.available_points < points:
+            try:
+                # Créer le token (cela déduit automatiquement les points)
+                exchange_token = serializer.save()
+                
+                # Sérialiser la réponse
+                token_serializer = ExchangeTokenSerializer(exchange_token)
+                
+                return Response({
+                    'success': True,
+                    'token': token_serializer.data,
+                    'qr_code_data': f'EXCHANGE:{exchange_token.token}:{exchange_token.points}:{exchange_token.user.id}',
+                    'expires_in_minutes': 3,
+                    'message': f'Token d\'échange créé pour {exchange_token.points} points. Expire dans 3 minutes.'
+                }, status=status.HTTP_201_CREATED)
+                
+            except Exception as e:
                 return Response({
                     'success': False,
-                    'error': f'Points insuffisants. Vous avez {user.available_points} points disponibles.',
-                    'available_points': user.available_points
-                }, status=status.HTTP_400_BAD_REQUEST)
-            
-            # Générer un token unique
-            import secrets
-            import string
-            
-            # Créer un token aléatoire
-            token = ''.join(secrets.choice(string.ascii_uppercase + string.digits) for _ in range(16))
-            
-            # Définir l'expiration (3 minutes)
-            expires_at = timezone.now() + timezone.timedelta(minutes=3)
-            
-            # Créer le token d'échange
-            exchange_token = ExchangeToken.objects.create(
-                user=user,
-                points=points,
-                token=token,
-                expires_at=expires_at
-            )
-            
-            # Sérialiser la réponse
-            token_serializer = ExchangeTokenSerializer(exchange_token)
-            
-            return Response({
-                'success': True,
-                'token': token_serializer.data,
-                'qr_code_data': f'EXCHANGE:{token}:{points}:{user.id}',
-                'expires_in_minutes': 3,
-                'message': f'Token d\'échange créé pour {points} points. Expire dans 3 minutes.'
-            }, status=status.HTTP_201_CREATED)
+                    'error': f'Erreur lors de la création du token: {str(e)}'
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
         return Response({
             'success': False,
@@ -561,8 +542,15 @@ class ExchangeTokenValidateView(APIView):
                 points=exchange_token.points,
                 exchange_code=token,
                 status='completed',
-                completed_at=timezone.now()
+                completed_at=timezone.now(),
+                approved_by=request.user
             )
+            
+            # Mettre à jour les points de l'utilisateur (déjà déduits lors de la création du token)
+            # Mais s'assurer que l'échange est bien comptabilisé
+            user = exchange_token.user
+            user.exchanged_points += exchange_token.points
+            user.save(update_fields=['exchanged_points'])
             
             return Response({
                 'success': True,

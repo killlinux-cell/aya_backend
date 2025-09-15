@@ -135,6 +135,8 @@ class ExchangeRequestCreateSerializer(serializers.ModelSerializer):
         return exchange_request
 
 
+
+
 class ExchangeTokenSerializer(serializers.ModelSerializer):
     """
     Serializer pour les tokens d'échange temporaires
@@ -165,6 +167,31 @@ class ExchangeTokenCreateSerializer(serializers.Serializer):
                 f"Points insuffisants. Vous avez {user.available_points} points disponibles."
             )
         return value
+    
+    def create(self, validated_data):
+        user = self.context['request'].user
+        points = validated_data['points']
+        
+        # Déduire les points de l'utilisateur immédiatement
+        user.available_points -= points
+        user.save(update_fields=['available_points'])
+        
+        # Générer un token unique
+        import secrets
+        import string
+        from django.utils import timezone
+        
+        token = ''.join(secrets.choice(string.ascii_uppercase + string.digits) for _ in range(16))
+        expires_at = timezone.now() + timezone.timedelta(minutes=3)
+        
+        exchange_token = ExchangeToken.objects.create(
+            user=user,
+            points=points,
+            token=token,
+            expires_at=expires_at
+        )
+        
+        return exchange_token
 
 
 class ExchangeValidationSerializer(serializers.Serializer):

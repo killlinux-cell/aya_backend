@@ -395,11 +395,16 @@ class VendorLoginView(APIView):
 def available_vendors(request):
     """Récupérer la liste des vendeurs disponibles"""
     try:
+        print(f'🔄 available_vendors: Requête reçue de {request.user.email}')
+        
         # Récupérer tous les vendeurs actifs
         vendors = Vendor.objects.filter(status='active').order_by('business_name')
         
+        print(f'🏪 available_vendors: Nombre de vendeurs actifs trouvés: {vendors.count()}')
+        
         vendors_data = []
         for vendor in vendors:
+            print(f'   - {vendor.business_name} (ID: {vendor.id}, Status: {vendor.status})')
             vendors_data.append({
                 'id': str(vendor.id),
                 'business_name': vendor.business_name,
@@ -412,12 +417,17 @@ def available_vendors(request):
                 'longitude': vendor.longitude,
             })
         
-        return Response({
+        response_data = {
             'results': vendors_data,
             'total': len(vendors_data),
-        })
+        }
+        
+        print(f'✅ available_vendors: Réponse envoyée avec {len(vendors_data)} vendeurs')
+        
+        return Response(response_data)
         
     except Exception as e:
+        print(f'❌ available_vendors: Erreur: {str(e)}')
         return Response({
             'error': f'Erreur lors de la récupération des vendeurs: {str(e)}'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
