@@ -510,6 +510,555 @@ def bulk_generate_qr_codes(request):
     return JsonResponse({'success': False, 'error': 'Méthode non autorisée'})
 
 
+@login_required
+@user_passes_test(is_admin)
+def generate_batch_qr_codes(request):
+    """Générer un lot de QR codes selon le scénario de bouteilles - VERSION SIMPLIFIÉE"""
+    
+    if request.method == 'POST':
+        try:
+            batch_number = request.POST.get('batch_number', '4151000')
+            
+            # Vérifier si le lot existe déjà
+            if QRCode.objects.filter(batch_number=batch_number).exists():
+                messages.error(request, f'Le lot {batch_number} existe déjà ! Choisissez un autre numéro de lot.')
+                return JsonResponse({
+                    'success': False,
+                    'error': f'Le lot {batch_number} existe déjà !'
+                })
+            
+            # SCÉNARIO FIXE - 50 000 QR codes exactement
+            scenario = {
+                '10_points': 25000,    # 50% - QR codes gagnants 10 points
+                '50_points': 15000,    # 30% - QR codes gagnants 50 points  
+                '100_points': 5000,    # 10% - QR codes gagnants 100 points
+                'try_again': 4000,     # 8% - QR codes "Réessayer"
+                'loyalty_bonus': 500,  # 1% - QR codes "Bonus Fidélité"
+                'mystery_box': 500,    # 1% - QR codes "Mystery Box"
+            }
+            
+            total_codes = sum(scenario.values())  # 50 000 exactement
+            
+            print(f"🚀 Génération du lot {batch_number} avec {total_codes} QR codes...")
+            
+            generated_codes = []
+            sequence = 1
+            
+            # 1. Générer les QR codes gagnants (10 points) - 25 000
+            print(f"📦 Génération des QR codes 10 points...")
+            for i in range(scenario['10_points']):
+                code = f"{batch_number}{sequence:05d}"
+                qr_code = QRCode.objects.create(
+                    code=code,
+                    points=10,
+                    description=f"Lot {batch_number} - 10 points - QR #{sequence}",
+                    prize_type='points',
+                    is_active=True,
+                    created_by=request.user,
+                    batch_number=batch_number,
+                    batch_sequence=sequence,
+                    is_printed=True
+                )
+                generated_codes.append({
+                    'code': qr_code.code,
+                    'points': qr_code.points,
+                    'type': '10 points'
+                })
+                sequence += 1
+                
+                # Afficher le progrès tous les 5000 QR codes
+                if sequence % 5000 == 1:
+                    print(f"✅ {sequence-1} QR codes 10 points générés...")
+            
+            # 2. Générer les QR codes gagnants (50 points) - 15 000
+            print(f"📦 Génération des QR codes 50 points...")
+            for i in range(scenario['50_points']):
+                code = f"{batch_number}{sequence:05d}"
+                qr_code = QRCode.objects.create(
+                    code=code,
+                    points=50,
+                    description=f"Lot {batch_number} - 50 points - QR #{sequence}",
+                    prize_type='points',
+                    is_active=True,
+                    created_by=request.user,
+                    batch_number=batch_number,
+                    batch_sequence=sequence,
+                    is_printed=True
+                )
+                generated_codes.append({
+                    'code': qr_code.code,
+                    'points': qr_code.points,
+                    'type': '50 points'
+                })
+                sequence += 1
+                
+                if sequence % 5000 == 1:
+                    print(f"✅ {sequence-1} QR codes 50 points générés...")
+            
+            # 3. Générer les QR codes gagnants (100 points) - 5 000
+            print(f"📦 Génération des QR codes 100 points...")
+            for i in range(scenario['100_points']):
+                code = f"{batch_number}{sequence:05d}"
+                qr_code = QRCode.objects.create(
+                    code=code,
+                    points=100,
+                    description=f"Lot {batch_number} - 100 points - QR #{sequence}",
+                    prize_type='points',
+                    is_active=True,
+                    created_by=request.user,
+                    batch_number=batch_number,
+                    batch_sequence=sequence,
+                    is_printed=True
+                )
+                generated_codes.append({
+                    'code': qr_code.code,
+                    'points': qr_code.points,
+                    'type': '100 points'
+                })
+                sequence += 1
+                
+                if sequence % 1000 == 1:
+                    print(f"✅ {sequence-1} QR codes 100 points générés...")
+            
+            # 4. Générer les QR codes "Réessayer" - 4 500
+            print(f"📦 Génération des QR codes 'Réessayer'...")
+            for i in range(scenario['try_again']):
+                code = f"{batch_number}{sequence:05d}"
+                qr_code = QRCode.objects.create(
+                    code=code,
+                    points=0,
+                    description=f"Lot {batch_number} - Réessayer - QR #{sequence}",
+                    prize_type='try_again',
+                    is_active=True,
+                    created_by=request.user,
+                    batch_number=batch_number,
+                    batch_sequence=sequence,
+                    is_printed=True
+                )
+                generated_codes.append({
+                    'code': qr_code.code,
+                    'points': qr_code.points,
+                    'type': 'Réessayer'
+                })
+                sequence += 1
+                
+                if sequence % 1000 == 1:
+                    print(f"✅ {sequence-1} QR codes 'Réessayer' générés...")
+            
+            # 5. Générer les QR codes "Bonus Fidélité" - 500
+            print(f"📦 Génération des QR codes 'Bonus Fidélité'...")
+            for i in range(scenario['loyalty_bonus']):
+                code = f"{batch_number}{sequence:05d}"
+                qr_code = QRCode.objects.create(
+                    code=code,
+                    points=0,
+                    description=f"Lot {batch_number} - Bonus Fidélité - QR #{sequence}",
+                    prize_type='loyalty_bonus',
+                    is_active=True,
+                    created_by=request.user,
+                    batch_number=batch_number,
+                    batch_sequence=sequence,
+                    is_printed=True
+                )
+                generated_codes.append({
+                    'code': qr_code.code,
+                    'points': qr_code.points,
+                    'type': 'Bonus Fidélité'
+                })
+                sequence += 1
+
+            # Generate 'mystery_box' QR codes
+            for i in range(scenario['mystery_box']):
+                code = f"{batch_number}{sequence:05d}"
+                qr_code = QRCode.objects.create(
+                    code=code,
+                    points=0,
+                    description=f"Lot {batch_number} - Mystery Box - QR #{sequence}",
+                    prize_type='mystery_box',
+                    is_active=True,
+                    created_by=request.user,
+                    batch_number=batch_number,
+                    batch_sequence=sequence,
+                    is_printed=True
+                )
+                generated_codes.append({
+                    'code': qr_code.code,
+                    'points': qr_code.points,
+                    'type': 'Mystery Box'
+                })
+                sequence += 1
+            
+            print(f"🎉 Lot {batch_number} généré avec succès ! {total_codes} QR codes créés.")
+            
+            # Statistiques du lot
+            stats = {
+                'batch_number': batch_number,
+                'total_generated': len(generated_codes),
+                'winning_10': scenario['10_points'],
+                'winning_50': scenario['50_points'],
+                'winning_100': scenario['100_points'],
+                'try_again': scenario['try_again'],
+                'loyalty_bonus': scenario['loyalty_bonus'],
+                'mystery_box': scenario['mystery_box'],
+                'total_points_distributed': (scenario['10_points'] * 10) + (scenario['50_points'] * 50) + (scenario['100_points'] * 100)
+            }
+            
+            messages.success(request, f'🎉 Lot {batch_number} généré avec succès ! {total_codes} QR codes créés et prêts pour l\'impression.')
+            return JsonResponse({
+                'success': True,
+                'stats': stats,
+                'message': f'Lot {batch_number} généré avec succès ! {total_codes} QR codes créés.'
+            })
+            
+        except Exception as e:
+            print(f"❌ Erreur lors de la génération du lot: {str(e)}")
+            messages.error(request, f'Erreur lors de la génération du lot: {str(e)}')
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            })
+    
+    return JsonResponse({'success': False, 'error': 'Méthode non autorisée'})
+
+
+@login_required
+@user_passes_test(is_admin)
+def batch_generation_page(request):
+    """Page d'affichage pour la génération de lot de QR codes"""
+    return render(request, 'dashboard/generate_batch.html')
+
+
+@login_required
+def loyalty_bonus_status(request):
+    """Vérifier si l'utilisateur a des QR codes loyalty_bonus disponibles"""
+    try:
+        user = request.user
+        
+        # Récupérer les QR codes loyalty_bonus scannés par l'utilisateur
+        loyalty_qr_codes = UserQRCode.objects.filter(
+            user=user,
+            qr_code__prize_type='loyalty_bonus',
+            qr_code__is_active=True
+        ).select_related('qr_code')
+        
+        # Vérifier s'il y a des QR codes non utilisés pour les jeux
+        available_loyalty_codes = loyalty_qr_codes.filter(
+            qr_code__is_active=True
+        )
+        
+        has_loyalty_bonus = available_loyalty_codes.exists()
+        loyalty_bonus_qr_code = None
+        
+        if has_loyalty_bonus:
+            # Prendre le premier QR code disponible
+            first_code = available_loyalty_codes.first()
+            loyalty_bonus_qr_code = first_code.qr_code.code
+        
+        return JsonResponse({
+            'has_loyalty_bonus': has_loyalty_bonus,
+            'loyalty_bonus_qr_code': loyalty_bonus_qr_code,
+            'available_count': available_loyalty_codes.count(),
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'has_loyalty_bonus': False,
+            'loyalty_bonus_qr_code': None,
+            'error': str(e)
+        }, status=500)
+
+
+@login_required
+def mystery_box_available(request):
+    """Vérifier si l'utilisateur a des QR codes mystery_box disponibles"""
+    try:
+        user = request.user
+        
+        # Récupérer les QR codes mystery_box scannés par l'utilisateur
+        mystery_qr_codes = UserQRCode.objects.filter(
+            user=user,
+            qr_code__prize_type='mystery_box',
+            qr_code__is_active=True
+        ).select_related('qr_code')
+        
+        has_mystery_box = mystery_qr_codes.exists()
+        
+        return JsonResponse({
+            'has_mystery_box': has_mystery_box,
+            'available_count': mystery_qr_codes.count(),
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'has_mystery_box': False,
+            'error': str(e)
+        }, status=500)
+
+
+@login_required
+def open_mystery_box(request):
+    """Ouvrir une Mystery Box et révéler le prix"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Méthode non autorisée'}, status=405)
+    
+    try:
+        data = json.loads(request.body)
+        qr_code = data.get('qr_code')
+        
+        if not qr_code:
+            return JsonResponse({'error': 'QR code requis'}, status=400)
+        
+        user = request.user
+        
+        # Vérifier que l'utilisateur a ce QR code mystery_box
+        user_qr_code = UserQRCode.objects.filter(
+            user=user,
+            qr_code__code=qr_code,
+            qr_code__prize_type='mystery_box',
+            qr_code__is_active=True
+        ).first()
+        
+        if not user_qr_code:
+            return JsonResponse({
+                'error': 'QR code Mystery Box non trouvé ou déjà utilisé'
+            }, status=404)
+        
+        # Générer un prix aléatoire pour la Mystery Box
+        import random
+        
+        # Probabilités des prix (ajustables selon vos besoins)
+        prize_types = [
+            ('points', 0.4),      # 40% - Points
+            ('special_prize', 0.1), # 10% - Prix spécial
+            ('bonus_game', 0.2),   # 20% - Jeu bonus
+            ('loyalty_bonus', 0.2), # 20% - Bonus fidélité
+            ('try_again', 0.1),    # 10% - Réessayer
+        ]
+        
+        # Sélectionner le type de prix
+        rand = random.random()
+        cumulative = 0
+        selected_prize_type = 'points'
+        
+        for prize_type, probability in prize_types:
+            cumulative += probability
+            if rand <= cumulative:
+                selected_prize_type = prize_type
+                break
+        
+        # Déterminer la valeur du prix
+        prize_value = 0
+        prize_description = ''
+        is_special_prize = False
+        
+        if selected_prize_type == 'points':
+            prize_value = random.choice([20, 30, 50, 75, 100])
+            prize_description = f'{prize_value} points'
+        elif selected_prize_type == 'special_prize':
+            special_prizes = [
+                ('500 points', 500),
+                ('Jeu gratuit illimité', 0),
+                ('Bonus fidélité x3', 0),
+            ]
+            prize_desc, prize_value = random.choice(special_prizes)
+            prize_description = prize_desc
+            is_special_prize = True
+        elif selected_prize_type == 'bonus_game':
+            prize_description = 'Jeu bonus gratuit'
+            prize_value = 0
+        elif selected_prize_type == 'loyalty_bonus':
+            prize_description = 'QR code Bonus Fidélité'
+            prize_value = 0
+        elif selected_prize_type == 'try_again':
+            prize_description = 'Réessayer plus tard'
+            prize_value = 0
+        
+        # Créer l'historique de la Mystery Box
+        from .models import MysteryBoxHistory
+        mystery_history = MysteryBoxHistory.objects.create(
+            user=user,
+            qr_code=user_qr_code.qr_code,
+            prize_type=selected_prize_type,
+            prize_value=prize_value,
+            prize_description=prize_description,
+            is_special_prize=is_special_prize,
+        )
+        
+        # Si c'est des points, les ajouter au profil utilisateur
+        if selected_prize_type == 'points' and prize_value > 0:
+            user.available_points += prize_value
+            user.save()
+        
+        # Marquer le QR code comme utilisé
+        user_qr_code.qr_code.is_active = False
+        user_qr_code.qr_code.save()
+        
+        return JsonResponse({
+            'success': True,
+            'prize_type': selected_prize_type,
+            'prize_value': prize_value,
+            'prize_description': prize_description,
+            'is_special_prize': is_special_prize,
+            'message': f'Félicitations ! Vous avez gagné : {prize_description}',
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'error': f'Erreur lors de l\'ouverture de la Mystery Box: {str(e)}'
+        }, status=500)
+
+
+@login_required
+def mystery_box_history(request):
+    """Récupérer l'historique des Mystery Box ouvertes"""
+    try:
+        user = request.user
+        
+        # Récupérer l'historique des Mystery Box
+        from .models import MysteryBoxHistory
+        history = MysteryBoxHistory.objects.filter(user=user).order_by('-opened_at')
+        
+        history_data = []
+        for item in history:
+            history_data.append({
+                'id': str(item.id),
+                'qr_code': item.qr_code.code,
+                'prize_type': item.prize_type,
+                'prize_value': item.prize_value,
+                'prize_description': item.prize_description,
+                'opened_at': item.opened_at.isoformat(),
+                'is_special_prize': item.is_special_prize,
+            })
+        
+        return JsonResponse({
+            'results': history_data,
+            'total': len(history_data),
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'error': f'Erreur lors de la récupération de l\'historique: {str(e)}'
+        }, status=500)
+
+
+@login_required
+def mystery_box_stats(request):
+    """Récupérer les statistiques des Mystery Box"""
+    try:
+        user = request.user
+        
+        # Récupérer les statistiques
+        from .models import MysteryBoxHistory
+        from django.db.models import Sum, Count, Avg
+        
+        stats = MysteryBoxHistory.objects.filter(user=user).aggregate(
+            total_opened=Count('id'),
+            total_value=Sum('prize_value'),
+            special_prizes=Count('id', filter=Q(is_special_prize=True)),
+            average_value=Avg('prize_value'),
+        )
+        
+        # Dernière Mystery Box ouverte
+        last_opened = MysteryBoxHistory.objects.filter(user=user).order_by('-opened_at').first()
+        
+        return JsonResponse({
+            'total_opened': stats['total_opened'] or 0,
+            'total_value': stats['total_value'] or 0,
+            'special_prizes': stats['special_prizes'] or 0,
+            'average_value': float(stats['average_value'] or 0),
+            'last_opened': last_opened.opened_at.isoformat() if last_opened else None,
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'error': f'Erreur lors de la récupération des statistiques: {str(e)}'
+        }, status=500)
+
+
+@login_required
+def available_vendors(request):
+    """Récupérer la liste des vendeurs disponibles"""
+    try:
+        # Récupérer tous les vendeurs actifs
+        from authentication.models import Vendor
+        vendors = Vendor.objects.filter(status='active').order_by('business_name')
+        
+        vendors_data = []
+        for vendor in vendors:
+            vendors_data.append({
+                'id': str(vendor.id),
+                'business_name': vendor.business_name,
+                'business_address': vendor.business_address,
+                'phone_number': vendor.phone_number,
+                'city': vendor.city or '',
+                'region': vendor.region or '',
+                'status': vendor.status,
+                'latitude': vendor.latitude,
+                'longitude': vendor.longitude,
+            })
+        
+        return JsonResponse({
+            'results': vendors_data,
+            'total': len(vendors_data),
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'error': f'Erreur lors de la récupération des vendeurs: {str(e)}'
+        }, status=500)
+
+
+@login_required
+def search_vendors(request):
+    """Rechercher des vendeurs par nom ou ville"""
+    try:
+        query = request.GET.get('q', '').strip()
+        
+        if not query:
+            return JsonResponse({
+                'results': [],
+                'total': 0,
+                'message': 'Terme de recherche requis'
+            })
+        
+        from authentication.models import Vendor
+        from django.db.models import Q
+        
+        # Recherche dans le nom d'entreprise, l'adresse, la ville et la région
+        vendors = Vendor.objects.filter(
+            Q(business_name__icontains=query) |
+            Q(business_address__icontains=query) |
+            Q(city__icontains=query) |
+            Q(region__icontains=query),
+            status='active'
+        ).order_by('business_name')
+        
+        vendors_data = []
+        for vendor in vendors:
+            vendors_data.append({
+                'id': str(vendor.id),
+                'business_name': vendor.business_name,
+                'business_address': vendor.business_address,
+                'phone_number': vendor.phone_number,
+                'city': vendor.city or '',
+                'region': vendor.region or '',
+                'status': vendor.status,
+                'latitude': vendor.latitude,
+                'longitude': vendor.longitude,
+            })
+        
+        return JsonResponse({
+            'results': vendors_data,
+            'total': len(vendors_data),
+            'query': query,
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'error': f'Erreur lors de la recherche de vendeurs: {str(e)}'
+        }, status=500)
+
+
 # ===== GESTION DES VENDEURS =====
 
 @login_required

@@ -13,8 +13,9 @@ class QRCode(models.Model):
     """
     PRIZE_TYPES = [
         ('points', 'Points'),
-        ('loyalty_ticket', 'Ticket de Fidélité'),
-        ('special_prize', 'Prix Spécial'),
+        ('try_again', 'Réessayer'),
+        ('loyalty_bonus', 'Bonus Fidélité'),
+        ('mystery_box', 'Boîte Mystère'),
     ]
     
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -28,6 +29,11 @@ class QRCode(models.Model):
     # Métadonnées
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='created_qr_codes')
+    
+    # Gestion des lots
+    batch_number = models.CharField(max_length=50, blank=True, help_text="Numéro de lot (ex: 4151000)")
+    batch_sequence = models.IntegerField(null=True, blank=True, help_text="Numéro de séquence dans le lot")
+    is_printed = models.BooleanField(default=False, help_text="QR code imprimé sur bouteille")
     
     class Meta:
         db_table = 'qr_codes'

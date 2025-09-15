@@ -1,0 +1,233 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+
+{% block title %}Génération de Lot de QR Codes{% endblock %}
+
+{% block extra_css %}
+<style>
+    .batch-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+    
+    .scenario-card {
+        background: white;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .stats-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .stats-item:last-child {
+        border-bottom: none;
+    }
+    
+    .points-badge {
+        background: #28a745;
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.875rem;
+        font-weight: 600;
+    }
+    
+    .type-badge {
+        background: #6c757d;
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.875rem;
+    }
+    
+    .btn-generate {
+        background: linear-gradient(45deg, #28a745, #20c997);
+        border: none;
+        color: white;
+        padding: 1rem 2rem;
+        font-size: 1.1rem;
+        font-weight: 600;
+        border-radius: 50px;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-generate:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 15px rgba(40, 167, 69, 0.3);
+    }
+    
+    .warning-box {
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="batch-card">
+                <h2 class="mb-3">
+                    <i class="fas fa-qrcode"></i> Génération de Lot de QR Codes
+                </h2>
+                <p class="mb-0">
+                    Générez automatiquement 50 000 QR codes selon le scénario de bouteilles prédéfini.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-cogs"></i> Configuration du Lot
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form id="batchForm" method="POST" action="{% url 'dashboard:generate_batch_qr_codes' %}">
+                        {% csrf_token %}
+                        
+                        <div class="warning-box">
+                            <i class="fas fa-exclamation-triangle text-warning"></i>
+                            <strong>Attention :</strong> Cette opération va générer 50 000 QR codes. 
+                            Assurez-vous que le numéro de lot n'existe pas déjà.
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="batch_number" class="form-label">
+                                <i class="fas fa-hashtag"></i> Numéro de Lot
+                            </label>
+                            <input type="text" 
+                                   class="form-control form-control-lg" 
+                                   id="batch_number" 
+                                   name="batch_number" 
+                                   value="4151000"
+                                   placeholder="Ex: 4151000"
+                                   required>
+                            <div class="form-text">
+                                Format recommandé : 7 chiffres (ex: 4151000)
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-generate" id="generateBtn">
+                                <i class="fas fa-rocket"></i> Générer le Lot Complet
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-pie"></i> Scénario Prédéfini
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="scenario-card">
+                        <h6 class="text-primary mb-3">
+                            <i class="fas fa-trophy"></i> QR Codes Gagnants (45 000)
+                        </h6>
+                        
+                        <div class="stats-item">
+                            <span><i class="fas fa-star text-warning"></i> 10 points</span>
+                            <span class="points-badge">25 000 QR</span>
+                        </div>
+                        <div class="stats-item">
+                            <span><i class="fas fa-star text-warning"></i> 50 points</span>
+                            <span class="points-badge">15 000 QR</span>
+                        </div>
+                        <div class="stats-item">
+                            <span><i class="fas fa-star text-warning"></i> 100 points</span>
+                            <span class="points-badge">5 000 QR</span>
+                        </div>
+                    </div>
+                    
+                    <div class="scenario-card">
+                        <h6 class="text-info mb-3">
+                            <i class="fas fa-redo"></i> QR Codes Spéciaux (5 000)
+                        </h6>
+                        
+                        <div class="stats-item">
+                            <span><i class="fas fa-redo text-info"></i> Réessayer</span>
+                            <span class="type-badge">4 500 QR</span>
+                        </div>
+                        <div class="stats-item">
+                            <span><i class="fas fa-gift text-success"></i> Bonus Fidélité</span>
+                            <span class="type-badge">500 QR</span>
+                        </div>
+                    </div>
+                    
+                    <div class="scenario-card">
+                        <h6 class="text-success mb-3">
+                            <i class="fas fa-calculator"></i> Total du Lot
+                        </h6>
+                        
+                        <div class="stats-item">
+                            <span><strong>Total QR Codes</strong></span>
+                            <span class="points-badge">50 000</span>
+                        </div>
+                        <div class="stats-item">
+                            <span><strong>Points Distribués</strong></span>
+                            <span class="points-badge">1 000 000</span>
+                        </div>
+                        <div class="stats-item">
+                            <span><strong>Taux de Gain</strong></span>
+                            <span class="points-badge">90%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('batchForm').addEventListener('submit', function(e) {
+    const generateBtn = document.getElementById('generateBtn');
+    const batchNumber = document.getElementById('batch_number').value;
+    
+    // Confirmation avant génération
+    if (!confirm(`Êtes-vous sûr de vouloir générer le lot ${batch_number} ?\n\nCette opération va créer 50 000 QR codes et peut prendre plusieurs minutes.`)) {
+        e.preventDefault();
+        return;
+    }
+    
+    // Désactiver le bouton et afficher le progrès
+    generateBtn.disabled = true;
+    generateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Génération en cours...';
+    
+    // Le formulaire sera soumis normalement
+});
+
+// Vérifier si le lot existe déjà
+document.getElementById('batch_number').addEventListener('blur', function() {
+    const batchNumber = this.value;
+    if (batchNumber) {
+        // Ici on pourrait ajouter une vérification AJAX
+        console.log(`Vérification du lot ${batchNumber}...`);
+    }
+});
+</script>
+{% endblock %}

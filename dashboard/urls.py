@@ -15,6 +15,15 @@ urlpatterns = [
     path('qr-codes/<uuid:qr_code_id>/generate/', views.generate_qr_code_image, name='generate_qr_code'),
     path('qr-codes/<uuid:qr_code_id>/download/', views.download_qr_code, name='download_qr_code'),
     path('qr-codes/bulk-generate/', views.bulk_generate_qr_codes, name='bulk_generate_qr_codes'),
+    path('qr-codes/generate-batch/', views.batch_generation_page, name='batch_generation_page'),
+    path('qr-codes/generate-batch/process/', views.generate_batch_qr_codes, name='generate_batch_qr_codes'),
+    path('games/loyalty-bonus/', views.loyalty_bonus_status, name='loyalty_bonus_status'),
+    path('mystery-box/available/', views.mystery_box_available, name='mystery_box_available'),
+    path('mystery-box/open/', views.open_mystery_box, name='open_mystery_box'),
+    path('mystery-box/history/', views.mystery_box_history, name='mystery_box_history'),
+    path('mystery-box/stats/', views.mystery_box_stats, name='mystery_box_stats'),
+    path('vendors/available/', views.available_vendors, name='available_vendors'),
+    path('vendors/search/', views.search_vendors, name='search_vendors'),
     
     # Gestion des utilisateurs
     path('users/', views.users_management, name='users'),
