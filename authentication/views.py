@@ -542,3 +542,66 @@ def vendor_exchange_history(request):
         return Response({
             'error': f'Erreur lors de la récupération de l\'historique: {str(e)}'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def vendor_exchange_confirm(request):
+    """Confirmer un échange côté vendeur"""
+    try:
+        print(f'🔄 vendor_exchange_confirm: Requête reçue de {request.user.email}')
+        
+        # Vérifier que l'utilisateur est un vendeur
+        try:
+            vendor = Vendor.objects.get(user=request.user)
+            print(f'🏪 vendor_exchange_confirm: Vendeur trouvé: {vendor.business_name}')
+        except Vendor.DoesNotExist:
+            print(f'❌ vendor_exchange_confirm: Utilisateur {request.user.email} n\'est pas un vendeur')
+            return Response({
+                'error': 'Accès refusé. Compte vendeur requis.'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        # Récupérer l'ID de l'échange
+        exchange_id = request.data.get('exchange_id')
+        if not exchange_id:
+            return Response({
+                'error': 'ID d\'échange requis'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Récupérer l'échange
+        from qr_codes.models import ExchangeRequest
+        try:
+            exchange = ExchangeRequest.objects.get(id=exchange_id)
+            print(f'📊 vendor_exchange_confirm: Échange trouvé: {exchange.id}, statut: {exchange.status}')
+        except ExchangeRequest.DoesNotExist:
+            return Response({
+                'error': 'Échange non trouvé'
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        # Vérifier que l'échange peut être confirmé
+        if exchange.status != 'pending':
+            return Response({
+                'error': f'L\'échange est déjà {exchange.status}'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Confirmer l'échange
+        exchange.status = 'completed'
+        exchange.approved_by = request.user
+        exchange.approved_at = timezone.now()
+        exchange.completed_at = timezone.now()
+        exchange.save()
+        
+        print(f'✅ vendor_exchange_confirm: Échange {exchange.id} confirmé avec succès')
+        
+        return Response({
+            'success': True,
+            'message': 'Échange confirmé avec succès',
+            'exchange_id': str(exchange.id),
+            'status': exchange.status,
+        })
+        
+    except Exception as e:
+        print(f'❌ vendor_exchange_confirm: Erreur: {str(e)}')
+        return Response({
+            'error': f'Erreur lors de la confirmation: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

@@ -15,4 +15,7 @@ urlpatterns = [
     
     # Historique des échanges pour les vendeurs
     path('exchange-history/', views.vendor_exchange_history, name='vendor_exchange_history'),
+    
+    # Confirmation d'échange pour les vendeurs
+    path('exchange-confirm/', views.vendor_exchange_confirm, name='vendor_exchange_confirm'),
 ]
