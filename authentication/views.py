@@ -510,6 +510,10 @@ def vendor_exchange_history(request):
         
         print(f'📊 vendor_exchange_history: Nombre d\'échanges trouvés: {exchanges.count()}')
         
+        # Log détaillé de chaque échange
+        for exchange in exchanges:
+            print(f'   - Échange {exchange.id}: {exchange.points} points, {exchange.status}, approuvé par {exchange.approved_by.email}')
+        
         exchanges_data = []
         for exchange in exchanges:
             exchanges_data.append({
