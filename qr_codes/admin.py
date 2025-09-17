@@ -43,14 +43,88 @@ class DailyGameLimitAdmin(admin.ModelAdmin):
 
 @admin.register(ExchangeRequest)
 class ExchangeRequestAdmin(admin.ModelAdmin):
-    list_display = ('user', 'points', 'exchange_code', 'status', 'created_at', 'completed_at')
-    list_filter = ('status', 'created_at', 'completed_at')
-    search_fields = ('user__email', 'exchange_code')
-    readonly_fields = ('exchange_code', 'created_at', 'completed_at')
+    list_display = (
+        'user_email', 
+        'points', 
+        'exchange_code', 
+        'status', 
+        'vendor_info',
+        'created_at', 
+        'completed_at'
+    )
+    list_filter = ('status', 'created_at', 'completed_at', 'approved_by')
+    search_fields = (
+        'user__email', 
+        'exchange_code', 
+        'approved_by__email',
+        'approved_by__vendor_profile__business_name'
+    )
+    readonly_fields = (
+        'exchange_code', 
+        'created_at', 
+        'completed_at',
+        'approved_at'
+    )
     list_per_page = 25
     
+    fieldsets = (
+        ('Informations générales', {
+            'fields': (
+                'user', 
+                'points', 
+                'exchange_code', 
+                'status'
+            )
+        }),
+        ('Validation vendeur', {
+            'fields': (
+                'approved_by', 
+                'approved_at', 
+                'completed_at'
+            )
+        }),
+        ('Métadonnées', {
+            'fields': (
+                'created_at',
+            ),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def user_email(self, obj):
+        return obj.user.email
+    user_email.short_description = 'Email Client'
+    user_email.admin_order_field = 'user__email'
+    
+    def vendor_info(self, obj):
+        if obj.approved_by and hasattr(obj.approved_by, 'vendor_profile'):
+            return f"{obj.approved_by.vendor_profile.business_name} ({obj.approved_by.vendor_profile.vendor_code})"
+        return "N/A"
+    vendor_info.short_description = 'Vendeur'
+    
     def get_queryset(self, request):
-        return super().get_queryset(request).select_related('user')
+        return super().get_queryset(request).select_related(
+            'user', 
+            'approved_by__vendor_profile'
+        )
+    
+    actions = ['approve_exchanges', 'reject_exchanges']
+    
+    def approve_exchanges(self, request, queryset):
+        from django.utils import timezone
+        updated = queryset.filter(status='pending').update(
+            status='completed',
+            approved_by=request.user,
+            approved_at=timezone.now(),
+            completed_at=timezone.now()
+        )
+        self.message_user(request, f'{updated} échange(s) approuvé(s) avec succès.')
+    approve_exchanges.short_description = "Approuver les échanges sélectionnés"
+    
+    def reject_exchanges(self, request, queryset):
+        updated = queryset.filter(status='pending').update(status='rejected')
+        self.message_user(request, f'{updated} échange(s) rejeté(s) avec succès.')
+    reject_exchanges.short_description = "Rejeter les échanges sélectionnés"
 
 @admin.register(ExchangeToken)
 class ExchangeTokenAdmin(admin.ModelAdmin):

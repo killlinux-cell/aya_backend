@@ -182,3 +182,7 @@ class Vendor(models.Model):
                     break
         
         super().save(*args, **kwargs)
+
+
+# Import des modèles du grand prix
+from .models_grand_prix import GrandPrix, GrandPrixPrize, GrandPrixParticipation, GrandPrixDraw
