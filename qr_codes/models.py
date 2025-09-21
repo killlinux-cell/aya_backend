@@ -201,3 +201,13 @@ class ExchangeToken(models.Model):
     @property
     def is_valid(self):
         return not self.is_used and not self.is_expired
+    
+    def restore_user_points(self):
+        """
+        Restaure les points de l'utilisateur si le token expire sans être utilisé
+        """
+        if not self.is_used and self.is_expired:
+            self.user.available_points += self.points
+            self.user.save(update_fields=['available_points'])
+            return True
+        return False
