@@ -251,8 +251,8 @@ class GamePlayView(APIView):
         if game_type == 'scratch_and_win':
             # Scratch & Win : 0-50 points avec probabilités
             chance = random.randint(1, 100)
-            if chance <= 2: return 0  # 2% de chance de rien gagner
-            elif chance <= 10: return 50  # 8% de chance de 50 points
+            if chance <= 5: return 0  # 5% de chance de rien gagner
+            elif chance <= 10: return 50  # 5% de chance de 50 points
             elif chance <= 25: return 25  # 15% de chance de 25 points
             elif chance <= 45: return 15  # 20% de chance de 15 points
             elif chance <= 70: return 10  # 25% de chance de 10 points
