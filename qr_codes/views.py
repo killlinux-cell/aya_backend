@@ -515,16 +515,28 @@ class ExchangeTokenValidateView(APIView):
                 'error': 'Token requis'
             }, status=status.HTTP_400_BAD_REQUEST)
         
+        # Nettoyer les tokens expirés avant la validation
+        from .tasks import cleanup_expired_tokens
+        cleanup_expired_tokens()
+        
         try:
             exchange_token = ExchangeToken.objects.get(token=token)
             
             # Vérifier si le token est valide
             if not exchange_token.is_valid:
                 if exchange_token.is_expired:
-                    return Response({
-                        'success': False,
-                        'error': 'Token expiré'
-                    }, status=status.HTTP_400_BAD_REQUEST)
+                    # Restaurer les points si le token est expiré
+                    if exchange_token.restore_user_points():
+                        return Response({
+                            'success': False,
+                            'error': 'Token expiré. Vos points ont été restaurés.',
+                            'points_restored': exchange_token.points
+                        }, status=status.HTTP_400_BAD_REQUEST)
+                    else:
+                        return Response({
+                            'success': False,
+                            'error': 'Token expiré'
+                        }, status=status.HTTP_400_BAD_REQUEST)
                 elif exchange_token.is_used:
                     return Response({
                         'success': False,
@@ -575,3 +587,55 @@ class ExchangeTokenValidateView(APIView):
                 'success': False,
                 'error': 'Token invalide'
             }, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({
+                'success': False,
+                'error': f'Erreur lors de la validation: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class ExchangeTokenStatusView(APIView):
+    """
+    Vue pour vérifier l'état des tokens d'échange de l'utilisateur
+    """
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get(self, request):
+        user = request.user
+        
+        # Nettoyer les tokens expirés avant de vérifier
+        from .tasks import cleanup_expired_tokens
+        cleanup_expired_tokens()
+        
+        # Récupérer les tokens de l'utilisateur
+        tokens = ExchangeToken.objects.filter(user=user).order_by('-created_at')
+        
+        active_tokens = []
+        expired_tokens = []
+        
+        for token in tokens:
+            if token.is_valid:
+                active_tokens.append({
+                    'token': token.token,
+                    'points': token.points,
+                    'created_at': token.created_at,
+                    'expires_at': token.expires_at,
+                    'is_valid': True
+                })
+            elif token.is_expired and not token.is_used:
+                expired_tokens.append({
+                    'token': token.token,
+                    'points': token.points,
+                    'created_at': token.created_at,
+                    'expires_at': token.expires_at,
+                    'is_expired': True,
+                    'points_restored': token.restore_user_points()
+                })
+        
+        return Response({
+            'success': True,
+            'active_tokens': active_tokens,
+            'expired_tokens': expired_tokens,
+            'total_active': len(active_tokens),
+            'total_expired': len(expired_tokens)
+        }, status=status.HTTP_200_OK)

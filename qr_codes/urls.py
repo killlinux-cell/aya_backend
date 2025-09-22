@@ -38,6 +38,7 @@ urlpatterns = [
     # Tokens d'échange temporaires
     path('exchange-tokens/create/', views.ExchangeTokenCreateView.as_view(), name='exchange_token_create'),
     path('exchange-tokens/validate/', views.ExchangeTokenValidateView.as_view(), name='exchange_token_validate'),
+    path('exchange-tokens/status/', views.ExchangeTokenStatusView.as_view(), name='exchange_token_status'),
     
     # Statistiques
     path('stats/', views.user_stats, name='qr_user_stats'),
