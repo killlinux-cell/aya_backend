@@ -367,8 +367,10 @@ class VendorLoginView(APIView):
                         'vendor': {
                             'id': str(vendor.id),
                             'business_name': vendor.business_name,
+                            'vendor_code': vendor.vendor_code,
                             'contact_name': f"{vendor.user.first_name} {vendor.user.last_name}",
                             'email': vendor.user.email,
+                            'status': vendor.status,
                             'is_active': vendor.status == 'active'
                         }
                     }, status=status.HTTP_200_OK)
@@ -508,11 +510,21 @@ def vendor_exchange_history(request):
             status='completed'
         ).order_by('-completed_at')
         
-        print(f'📊 vendor_exchange_history: Nombre d\'échanges trouvés: {exchanges.count()}')
+        # Récupérer aussi les tokens d'échange en attente (pour information)
+        pending_tokens = ExchangeRequest.objects.filter(
+            status='pending'
+        ).order_by('-created_at')[:10]  # Limiter à 10 derniers
         
-        # Log détaillé de chaque échange
+        print(f'📊 vendor_exchange_history: Nombre d\'échanges validés trouvés: {exchanges.count()}')
+        print(f'📋 vendor_exchange_history: Nombre de tokens en attente: {pending_tokens.count()}')
+        
+        # Log détaillé de chaque échange validé
         for exchange in exchanges:
-            print(f'   - Échange {exchange.id}: {exchange.points} points, {exchange.status}, approuvé par {exchange.approved_by.email}')
+            print(f'   - Échange validé {exchange.id}: {exchange.points} points, {exchange.status}, approuvé par {exchange.approved_by.email}')
+        
+        # Log des tokens en attente
+        for token in pending_tokens:
+            print(f'   - Token en attente {token.id}: {token.points} points, créé le {token.created_at}')
         
         exchanges_data = []
         for exchange in exchanges:
@@ -530,11 +542,28 @@ def vendor_exchange_history(request):
                 'notes': exchange.notes,
             })
         
-        print(f'✅ vendor_exchange_history: Réponse envoyée avec {len(exchanges_data)} échanges')
+        # Préparer les données des tokens en attente
+        pending_data = []
+        for token in pending_tokens:
+            pending_data.append({
+                'id': str(token.id),
+                'user_id': str(token.user.id),
+                'user_name': token.user.full_name,
+                'user_email': token.user.email,
+                'points': token.points,
+                'exchange_code': token.exchange_code,
+                'status': token.status,
+                'created_at': token.created_at.isoformat(),
+                'notes': token.notes,
+            })
+        
+        print(f'✅ vendor_exchange_history: Réponse envoyée avec {len(exchanges_data)} échanges validés et {len(pending_data)} tokens en attente')
         
         return Response({
             'results': exchanges_data,
             'total': len(exchanges_data),
+            'pending_tokens': pending_data,
+            'pending_count': len(pending_data),
             'vendor_name': vendor.business_name,
         })
         
