@@ -181,6 +181,7 @@ class ExchangeToken(models.Model):
     expires_at = models.DateTimeField()
     is_used = models.BooleanField(default=False)
     used_at = models.DateTimeField(null=True, blank=True)
+    points_restored = models.BooleanField(default=False)  # Marqueur pour éviter la double restauration
     
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
@@ -206,8 +207,10 @@ class ExchangeToken(models.Model):
         """
         Restaure les points de l'utilisateur si le token expire sans être utilisé
         """
-        if not self.is_used and self.is_expired:
+        if not self.is_used and self.is_expired and not self.points_restored:
             self.user.available_points += self.points
             self.user.save(update_fields=['available_points'])
+            self.points_restored = True
+            self.save(update_fields=['points_restored'])
             return True
         return False

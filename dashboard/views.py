@@ -12,6 +12,7 @@ import base64
 from django.core.files.base import ContentFile
 
 from authentication.models import User, Vendor
+from authentication.models_grand_prix import GrandPrix, GrandPrixParticipation, GrandPrixPrize
 from qr_codes.models import QRCode, UserQRCode, GameHistory, ExchangeRequest, ExchangeToken
 from django.core.paginator import Paginator
 
@@ -62,6 +63,33 @@ def dashboard_home(request):
     # Demandes d'échange en attente
     pending_exchanges = ExchangeRequest.objects.filter(status='pending').count()
     
+    # Statistiques des grands prix
+    now = timezone.now()
+    current_grand_prix = GrandPrix.objects.filter(
+        start_date__lte=now,
+        end_date__gte=now,
+        status='active'
+    ).first()
+    
+    total_grand_prizes = GrandPrix.objects.count()
+    total_participations = GrandPrixParticipation.objects.count()
+    current_participations = 0
+    current_grand_prix_info = None
+    
+    if current_grand_prix:
+        current_participations = GrandPrixParticipation.objects.filter(grand_prix=current_grand_prix).count()
+        current_grand_prix_info = {
+            'id': str(current_grand_prix.id),
+            'name': current_grand_prix.name,
+            'description': current_grand_prix.description,
+            'participation_cost': current_grand_prix.participation_cost,
+            'start_date': current_grand_prix.start_date,
+            'end_date': current_grand_prix.end_date,
+            'draw_date': current_grand_prix.draw_date,
+            'participants_count': current_participations,
+            'prizes': GrandPrixPrize.objects.filter(grand_prix=current_grand_prix).order_by('position')
+        }
+    
     context = {
         'total_users': total_users,
         'total_qr_codes': total_qr_codes,
@@ -80,6 +108,9 @@ def dashboard_home(request):
         'active_users': active_users,
         'top_users_by_points': top_users_by_points,
         'pending_exchanges': pending_exchanges,
+        'total_grand_prizes': total_grand_prizes,
+        'total_participations': total_participations,
+        'current_grand_prix': current_grand_prix_info,
     }
     
     return render(request, 'dashboard/home.html', context)
@@ -1321,6 +1352,10 @@ def games_management(request):
 def exchange_tokens_management(request):
     """Gestion des tokens d'échange temporaires"""
     
+    # Nettoyer automatiquement les tokens expirés avant d'afficher
+    from qr_codes.tasks import cleanup_expired_tokens
+    cleanup_expired_tokens()
+    
     # Filtres
     status_filter = request.GET.get('status', 'all')
     tokens = ExchangeToken.objects.select_related('user').all()
@@ -1359,6 +1394,116 @@ def exchange_tokens_management(request):
     }
     
     return render(request, 'dashboard/exchange_tokens.html', context)
+
+@login_required
+@user_passes_test(is_admin)
+def cleanup_expired_tokens(request):
+    """Nettoyage manuel des tokens expirés"""
+    from qr_codes.tasks import cleanup_expired_tokens
+    
+    try:
+        # Exécuter le nettoyage
+        cleanup_expired_tokens()
+        
+        messages.success(request, 'Nettoyage des tokens expirés effectué avec succès. Les points ont été restaurés aux utilisateurs.')
+    except Exception as e:
+        messages.error(request, f'Erreur lors du nettoyage: {str(e)}')
+    
+    return redirect('dashboard:exchange_tokens_management')
+
+# ===== GESTION DES GRANDS PRIX =====
+
+@login_required
+@user_passes_test(is_admin)
+def grand_prix_management(request):
+    """Gestion des grands prix"""
+    
+    # Filtres
+    status_filter = request.GET.get('status', 'all')
+    grand_prizes = GrandPrix.objects.all()
+    
+    if status_filter == 'active':
+        now = timezone.now()
+        grand_prizes = grand_prizes.filter(
+            start_date__lte=now,
+            end_date__gte=now,
+            status='active'
+        )
+    elif status_filter == 'upcoming':
+        now = timezone.now()
+        grand_prizes = grand_prizes.filter(
+            start_date__gt=now,
+            status='upcoming'
+        )
+    elif status_filter == 'finished':
+        now = timezone.now()
+        grand_prizes = grand_prizes.filter(
+            Q(end_date__lt=now) | Q(status='finished')
+        )
+    
+    # Statistiques
+    total_grand_prizes = GrandPrix.objects.count()
+    active_grand_prizes = GrandPrix.objects.filter(
+        start_date__lte=timezone.now(),
+        end_date__gte=timezone.now(),
+        status='active'
+    ).count()
+    upcoming_grand_prizes = GrandPrix.objects.filter(
+        start_date__gt=timezone.now(),
+        status='upcoming'
+    ).count()
+    finished_grand_prizes = GrandPrix.objects.filter(
+        Q(end_date__lt=timezone.now()) | Q(status='finished')
+    ).count()
+    
+    # Pagination
+    paginator = Paginator(grand_prizes, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'page_obj': page_obj,
+        'status_filter': status_filter,
+        'total_grand_prizes': total_grand_prizes,
+        'active_grand_prizes': active_grand_prizes,
+        'upcoming_grand_prizes': upcoming_grand_prizes,
+        'finished_grand_prizes': finished_grand_prizes,
+    }
+    
+    return render(request, 'dashboard/grand_prix.html', context)
+
+@login_required
+@user_passes_test(is_admin)
+def grand_prix_detail(request, grand_prix_id):
+    """Détail d'un grand prix"""
+    try:
+        grand_prix = GrandPrix.objects.get(id=grand_prix_id)
+        
+        # Récupérer les récompenses
+        prizes = GrandPrixPrize.objects.filter(grand_prix=grand_prix).order_by('position')
+        
+        # Récupérer les participations
+        participations = GrandPrixParticipation.objects.filter(
+            grand_prix=grand_prix
+        ).select_related('user').order_by('-participated_at')
+        
+        # Statistiques
+        total_participants = participations.count()
+        winners_count = participations.filter(is_winner=True).count()
+        
+        context = {
+            'grand_prix': grand_prix,
+            'prizes': prizes,
+            'participations': participations,
+            'total_participants': total_participants,
+            'winners_count': winners_count,
+        }
+        
+        return render(request, 'dashboard/grand_prix_detail.html', context)
+        
+    except GrandPrix.DoesNotExist:
+        messages.error(request, 'Grand prix non trouvé')
+        return redirect('dashboard:grand_prix_management')
 
 @login_required
 @user_passes_test(is_admin)

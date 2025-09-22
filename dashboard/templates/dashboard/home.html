@@ -126,6 +126,65 @@
     </div>
 </div>
 
+<!-- Statistiques des grands prix -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-number">{{ total_grand_prizes }}</div>
+                    <div class="stat-label">Grands Prix</div>
+                </div>
+                <div class="stat-icon">
+                    <i class="fas fa-trophy"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-number">{{ total_participations }}</div>
+                    <div class="stat-label">Participations</div>
+                </div>
+                <div class="stat-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-number">{{ active_exchange_tokens }}</div>
+                    <div class="stat-label">Tokens Actifs</div>
+                </div>
+                <div class="stat-icon">
+                    <i class="fas fa-ticket-alt"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-number">{{ recent_games }}</div>
+                    <div class="stat-label">Jeux (7j)</div>
+                </div>
+                <div class="stat-icon">
+                    <i class="fas fa-gamepad"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Statistiques récentes -->
 <div class="row mb-4">
     <div class="col-md-6">
@@ -167,6 +226,103 @@
         </div>
     </div>
 </div>
+
+<!-- Section Grand Prix -->
+{% if current_grand_prix %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-warning">
+            <div class="card-header bg-gradient" style="background: linear-gradient(135deg, #E91E63, #673AB7); color: white;">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-trophy"></i> Grand Prix Actuel</h5>
+                    <a href="{% url 'dashboard:grand_prix' %}" class="btn btn-light btn-sm">
+                        <i class="fas fa-eye"></i> Voir tous
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <h4 class="text-primary">{{ current_grand_prix.name }}</h4>
+                        <p class="text-muted">{{ current_grand_prix.description }}</p>
+                        
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-calendar-alt text-primary me-2"></i>
+                                    <div>
+                                        <small class="text-muted">Début</small><br>
+                                        <strong>{{ current_grand_prix.start_date|date:"d/m/Y H:i" }}</strong>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-calendar-check text-success me-2"></i>
+                                    <div>
+                                        <small class="text-muted">Fin</small><br>
+                                        <strong>{{ current_grand_prix.end_date|date:"d/m/Y H:i" }}</strong>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-gift text-warning me-2"></i>
+                                    <div>
+                                        <small class="text-muted">Tirage</small><br>
+                                        <strong>{{ current_grand_prix.draw_date|date:"d/m/Y H:i" }}</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-center">
+                        <div class="mb-3">
+                            <h3 class="text-primary">{{ current_grand_prix.participants_count }}</h3>
+                            <p class="text-muted mb-0">Participants</p>
+                        </div>
+                        <div class="mb-3">
+                            <span class="badge bg-warning fs-6">{{ current_grand_prix.participation_cost }} points</span>
+                            <p class="text-muted mb-0">Coût de participation</p>
+                        </div>
+                        <a href="{% url 'dashboard:grand_prix_detail' current_grand_prix.id %}" class="btn btn-primary">
+                            <i class="fas fa-eye"></i> Voir le détail
+                        </a>
+                    </div>
+                </div>
+                
+                {% if current_grand_prix.prizes %}
+                <hr>
+                <h6><i class="fas fa-gift"></i> Récompenses</h6>
+                <div class="row">
+                    {% for prize in current_grand_prix.prizes %}
+                    <div class="col-md-3 col-sm-6 mb-2">
+                        <div class="d-flex align-items-center">
+                            {% if prize.position == 1 %}
+                                <i class="fas fa-medal text-warning me-2"></i>
+                            {% elif prize.position == 2 %}
+                                <i class="fas fa-medal text-secondary me-2"></i>
+                            {% elif prize.position == 3 %}
+                                <i class="fas fa-medal me-2" style="color: #CD7F32;"></i>
+                            {% else %}
+                                <i class="fas fa-award text-primary me-2"></i>
+                            {% endif %}
+                            <div>
+                                <strong>{{ prize.name }}</strong>
+                                {% if prize.value %}
+                                <br><small class="text-success">{{ prize.value }}€</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
 
 <!-- QR Codes populaires -->
 <div class="row mb-4">
@@ -275,6 +431,14 @@
                         <a href="{% url 'dashboard:games' %}" class="btn btn-dark btn-lg w-100 mb-3">
                             <i class="fas fa-gamepad"></i><br>
                             Gérer Jeux
+                        </a>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-md-2">
+                        <a href="{% url 'dashboard:grand_prix' %}" class="btn btn-warning btn-lg w-100 mb-3">
+                            <i class="fas fa-trophy"></i><br>
+                            Grands Prix
                         </a>
                     </div>
                 </div>

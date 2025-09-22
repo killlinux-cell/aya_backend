@@ -1,11 +1,14 @@
 {% extends 'dashboard/base.html' %}
 {% load static %}
 
-{% block title %}Gestion des Tokens d'Échange{% endblock %}
+{% block title %}Gestion des Grands Prix{% endblock %}
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2><i class="fas fa-exchange-alt"></i> Gestion des Tokens d'Échange</h2>
+    <h2><i class="fas fa-trophy"></i> Gestion des Grands Prix</h2>
+    <a href="{% url 'admin:authentication_grandprix_add' %}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Nouveau Grand Prix
+    </a>
 </div>
 
 <!-- Statistiques -->
@@ -15,11 +18,11 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between">
                     <div>
-                        <h4>{{ total_tokens }}</h4>
-                        <p class="mb-0">Total Tokens</p>
+                        <h4>{{ total_grand_prizes }}</h4>
+                        <p class="mb-0">Total Grands Prix</p>
                     </div>
                     <div class="align-self-center">
-                        <i class="fas fa-exchange-alt fa-2x"></i>
+                        <i class="fas fa-trophy fa-2x"></i>
                     </div>
                 </div>
             </div>
@@ -30,11 +33,11 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between">
                     <div>
-                        <h4>{{ active_tokens }}</h4>
+                        <h4>{{ active_grand_prizes }}</h4>
                         <p class="mb-0">Actifs</p>
                     </div>
                     <div class="align-self-center">
-                        <i class="fas fa-check-circle fa-2x"></i>
+                        <i class="fas fa-play-circle fa-2x"></i>
                     </div>
                 </div>
             </div>
@@ -45,11 +48,11 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between">
                     <div>
-                        <h4>{{ used_tokens }}</h4>
-                        <p class="mb-0">Utilisés</p>
+                        <h4>{{ upcoming_grand_prizes }}</h4>
+                        <p class="mb-0">À venir</p>
                     </div>
                     <div class="align-self-center">
-                        <i class="fas fa-check-double fa-2x"></i>
+                        <i class="fas fa-clock fa-2x"></i>
                     </div>
                 </div>
             </div>
@@ -60,11 +63,11 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between">
                     <div>
-                        <h4>{{ expired_tokens }}</h4>
-                        <p class="mb-0">Expirés</p>
+                        <h4>{{ finished_grand_prizes }}</h4>
+                        <p class="mb-0">Terminés</p>
                     </div>
                     <div class="align-self-center">
-                        <i class="fas fa-clock fa-2x"></i>
+                        <i class="fas fa-check-circle fa-2x"></i>
                     </div>
                 </div>
             </div>
@@ -81,8 +84,8 @@
                 <select name="status" id="status" class="form-select">
                     <option value="all" {% if status_filter == 'all' %}selected{% endif %}>Tous</option>
                     <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Actifs</option>
-                    <option value="used" {% if status_filter == 'used' %}selected{% endif %}>Utilisés</option>
-                    <option value="expired" {% if status_filter == 'expired' %}selected{% endif %}>Expirés</option>
+                    <option value="upcoming" {% if status_filter == 'upcoming' %}selected{% endif %}>À venir</option>
+                    <option value="finished" {% if status_filter == 'finished' %}selected{% endif %}>Terminés</option>
                 </select>
             </div>
             <div class="col-md-4 d-flex align-items-end">
@@ -90,19 +93,14 @@
                     <i class="fas fa-filter"></i> Filtrer
                 </button>
             </div>
-            <div class="col-md-4 d-flex align-items-end">
-                <a href="{% url 'dashboard:cleanup_expired_tokens' %}" class="btn btn-warning" onclick="return confirm('Êtes-vous sûr de vouloir nettoyer les tokens expirés et restaurer les points ?')">
-                    <i class="fas fa-broom"></i> Nettoyer les Expirés
-                </a>
-            </div>
         </form>
     </div>
 </div>
 
-<!-- Liste des tokens -->
+<!-- Liste des grands prix -->
 <div class="card">
     <div class="card-header">
-        <h5 class="mb-0">Liste des Tokens d'Échange</h5>
+        <h5 class="mb-0">Liste des Grands Prix</h5>
     </div>
     <div class="card-body">
         {% if page_obj %}
@@ -110,48 +108,55 @@
             <table class="table table-striped">
                 <thead>
                     <tr>
-                        <th>ID</th>
-                        <th>Utilisateur</th>
-                        <th>Points</th>
-                        <th>Token</th>
-                        <th>Créé le</th>
-                        <th>Expire le</th>
+                        <th>Nom</th>
+                        <th>Période</th>
+                        <th>Coût</th>
                         <th>Statut</th>
-                        <th>Utilisé le</th>
+                        <th>Participants</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for token in page_obj %}
+                    {% for grand_prix in page_obj %}
                     <tr>
-                        <td>{{ token.id|truncatechars:8 }}</td>
                         <td>
-                            <strong>{{ token.user.full_name }}</strong>
+                            <strong>{{ grand_prix.name }}</strong>
                             <br>
-                            <small class="text-muted">{{ token.user.email }}</small>
+                            <small class="text-muted">{{ grand_prix.description|truncatechars:50 }}</small>
                         </td>
                         <td>
-                            <span class="badge bg-primary">{{ token.points }} pts</span>
+                            <div class="small">
+                                <strong>Début:</strong> {{ grand_prix.start_date|date:"d/m/Y H:i" }}<br>
+                                <strong>Fin:</strong> {{ grand_prix.end_date|date:"d/m/Y H:i" }}<br>
+                                <strong>Tirage:</strong> {{ grand_prix.draw_date|date:"d/m/Y H:i" }}
+                            </div>
                         </td>
                         <td>
-                            <code>{{ token.token|truncatechars:12 }}</code>
+                            <span class="badge bg-primary">{{ grand_prix.participation_cost }} pts</span>
                         </td>
-                        <td>{{ token.created_at|date:"d/m/Y H:i" }}</td>
-                        <td>{{ token.expires_at|date:"d/m/Y H:i" }}</td>
                         <td>
-                            {% if token.is_used %}
-                                <span class="badge bg-success">Utilisé</span>
-                            {% elif token.is_expired %}
-                                <span class="badge bg-warning">Expiré</span>
+                            {% if grand_prix.is_active %}
+                                <span class="badge bg-success">Actif</span>
+                            {% elif grand_prix.is_upcoming %}
+                                <span class="badge bg-info">À venir</span>
+                            {% elif grand_prix.is_finished %}
+                                <span class="badge bg-warning">Terminé</span>
                             {% else %}
-                                <span class="badge bg-info">Actif</span>
+                                <span class="badge bg-secondary">{{ grand_prix.get_status_display }}</span>
                             {% endif %}
                         </td>
                         <td>
-                            {% if token.used_at %}
-                                {{ token.used_at|date:"d/m/Y H:i" }}
-                            {% else %}
-                                <span class="text-muted">-</span>
-                            {% endif %}
+                            <span class="badge bg-light text-dark">
+                                {{ grand_prix.participations.count }} participant{{ grand_prix.participations.count|pluralize }}
+                            </span>
+                        </td>
+                        <td>
+                            <a href="{% url 'dashboard:grand_prix_detail' grand_prix.id %}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-eye"></i> Voir
+                            </a>
+                            <a href="{% url 'admin:authentication_grandprix_change' grand_prix.id %}" class="btn btn-sm btn-outline-secondary">
+                                <i class="fas fa-edit"></i> Modifier
+                            </a>
                         </td>
                     </tr>
                     {% endfor %}
@@ -161,7 +166,7 @@
 
         <!-- Pagination -->
         {% if page_obj.has_other_pages %}
-        <nav aria-label="Pagination des tokens">
+        <nav aria-label="Pagination des grands prix">
             <ul class="pagination justify-content-center">
                 {% if page_obj.has_previous %}
                     <li class="page-item">
@@ -192,32 +197,35 @@
 
         {% else %}
         <div class="text-center py-5">
-            <i class="fas fa-exchange-alt fa-3x text-muted mb-3"></i>
-            <h5 class="text-muted">Aucun token trouvé</h5>
-            <p class="text-muted">Aucun token d'échange n'a encore été créé.</p>
+            <i class="fas fa-trophy fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">Aucun grand prix trouvé</h5>
+            <p class="text-muted">Aucun grand prix ne correspond aux critères sélectionnés.</p>
+            <a href="{% url 'admin:authentication_grandprix_add' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Créer le premier grand prix
+            </a>
         </div>
         {% endif %}
     </div>
 </div>
 
-<!-- Informations sur les tokens -->
+<!-- Informations sur les grands prix -->
 <div class="card mt-4">
     <div class="card-header">
-        <h5 class="mb-0"><i class="fas fa-info-circle"></i> Informations sur les Tokens</h5>
+        <h5 class="mb-0"><i class="fas fa-info-circle"></i> Informations sur les Grands Prix</h5>
     </div>
     <div class="card-body">
         <div class="row">
             <div class="col-md-4">
-                <h6><i class="fas fa-clock text-info"></i> Durée de vie</h6>
-                <p class="text-muted">Les tokens d'échange expirent automatiquement après 3 minutes.</p>
+                <h6><i class="fas fa-calendar text-primary"></i> Période</h6>
+                <p class="text-muted">Les grands prix durent généralement un mois avec des dates de début, fin et tirage au sort.</p>
             </div>
             <div class="col-md-4">
-                <h6><i class="fas fa-shield-alt text-success"></i> Sécurité</h6>
-                <p class="text-muted">Chaque token est unique et ne peut être utilisé qu'une seule fois.</p>
+                <h6><i class="fas fa-coins text-warning"></i> Participation</h6>
+                <p class="text-muted">Les utilisateurs doivent avoir au moins 100 points pour participer aux grands prix.</p>
             </div>
             <div class="col-md-4">
-                <h6><i class="fas fa-mobile-alt text-warning"></i> Utilisation</h6>
-                <p class="text-muted">Les tokens sont scannés par les vendeurs pour valider les échanges.</p>
+                <h6><i class="fas fa-gift text-success"></i> Récompenses</h6>
+                <p class="text-muted">Chaque grand prix propose plusieurs récompenses avec des positions définies.</p>
             </div>
         </div>
     </div>

@@ -49,6 +49,11 @@ urlpatterns = [
     
     # Gestion des tokens d'échange
     path('exchange-tokens/', views.exchange_tokens_management, name='exchange_tokens'),
+    path('exchange-tokens/cleanup/', views.cleanup_expired_tokens, name='cleanup_expired_tokens'),
+    
+    # Gestion des grands prix
+    path('grand-prix/', views.grand_prix_management, name='grand_prix'),
+    path('grand-prix/<uuid:grand_prix_id>/', views.grand_prix_detail, name='grand_prix_detail'),
     
     # Nouvelles fonctionnalités
     path('qr-codes-analytics/', views.qr_codes_analytics, name='qr_codes_analytics'),
