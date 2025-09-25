@@ -4,6 +4,7 @@ Tâches asynchrones pour le nettoyage des tokens d'échange expirés
 from django.utils import timezone
 from django.db import transaction
 from qr_codes.models import ExchangeToken
+from authentication.models import User
 import logging
 
 logger = logging.getLogger(__name__)
@@ -21,11 +22,18 @@ def cleanup_expired_tokens():
             points_restored=False
         )
         
+        logger.info(f"Recherche de tokens expirés...")
+        logger.info(f"Tokens trouvés: {expired_tokens.count()}")
+        
         if not expired_tokens.exists():
             logger.info("Aucun token expiré à nettoyer")
             return
         
         logger.info(f"Nettoyage de {expired_tokens.count()} tokens expirés")
+        
+        # Log des détails des tokens
+        for token in expired_tokens:
+            logger.info(f"Token: {token.token}, User: {token.user.email}, Points: {token.points}, Expiré: {token.expires_at}")
         
         processed_users = set()
         total_points_restored = 0
@@ -45,40 +53,36 @@ def cleanup_expired_tokens():
                 user_points_to_restore[token.user.email]['points'] += token.points
                 token_ids_to_delete.append(token.id)
             
-            # Restaurer les points pour chaque utilisateur en utilisant des requêtes SQL directes
-            from django.db import connection
-            
+            # Restaurer les points pour chaque utilisateur en utilisant l'ORM Django
             for email, data in user_points_to_restore.items():
                 user_id = data['user_id']
                 points_to_restore = data['points']
                 
-                # Mettre à jour les points de l'utilisateur avec une requête SQL directe
-                with connection.cursor() as cursor:
-                    cursor.execute(
-                        "UPDATE auth_user SET available_points = available_points + %s WHERE id = %s",
-                        [points_to_restore, str(user_id)]
+                # Récupérer l'utilisateur et restaurer les points
+                try:
+                    user = User.objects.get(id=user_id)
+                    user.available_points += points_to_restore
+                    user.save(update_fields=['available_points'])
+                    
+                    processed_users.add(email)
+                    total_points_restored += points_to_restore
+                    
+                    logger.info(
+                        f"Points restaurés pour {email}: +{points_to_restore} points (nouveau total: {user.available_points})"
                     )
-                
-                # Marquer tous les tokens de cet utilisateur comme restaurés
-                ExchangeToken.objects.filter(
-                    user_id=user_id,
-                    id__in=token_ids_to_delete
-                ).update(points_restored=True)
-                
-                processed_users.add(email)
-                total_points_restored += points_to_restore
-                
-                logger.info(
-                    f"Points restaurés pour {email}: +{points_to_restore} points"
-                )
+                except User.DoesNotExist:
+                    logger.error(f"Utilisateur {email} (ID: {user_id}) non trouvé")
             
-            # Supprimer les tokens expirés
-            deleted_count = ExchangeToken.objects.filter(
+            # Marquer tous les tokens comme restaurés (ne pas les supprimer)
+            ExchangeToken.objects.filter(
                 id__in=token_ids_to_delete
-            ).delete()[0]
+            ).update(points_restored=True)
+            
+            # Compter les tokens traités (au lieu de les supprimer)
+            processed_count = len(token_ids_to_delete)
             
             logger.info(
-                f"Nettoyage terminé: {deleted_count} tokens supprimés, "
+                f"Nettoyage terminé: {processed_count} tokens traités, "
                 f"{len(processed_users)} utilisateurs concernés, "
                 f"{total_points_restored} points restaurés"
             )

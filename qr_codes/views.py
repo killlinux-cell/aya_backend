@@ -472,6 +472,10 @@ class ExchangeTokenCreateView(APIView):
     permission_classes = [permissions.IsAuthenticated]
     
     def post(self, request):
+        # Nettoyer les tokens expirés avant de créer un nouveau
+        from .tasks import cleanup_expired_tokens
+        cleanup_expired_tokens()
+        
         serializer = ExchangeTokenCreateSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
             try:
