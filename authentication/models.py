@@ -78,6 +78,10 @@ class UserProfile(models.Model):
     profile_picture = models.ImageField(upload_to='profiles/', null=True, blank=True)
     bio = models.TextField(max_length=500, blank=True)
     
+    # Localisation
+    latitude = models.FloatField(null=True, blank=True, help_text="Latitude de l'utilisateur")
+    longitude = models.FloatField(null=True, blank=True, help_text="Longitude de l'utilisateur")
+    
     # Préférences
     notifications_enabled = models.BooleanField(default=True)
     email_notifications = models.BooleanField(default=True)

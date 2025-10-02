@@ -14,10 +14,13 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     """
     password = serializers.CharField(write_only=True, validators=[validate_password])
     password_confirm = serializers.CharField(write_only=True)
+    phone_number = serializers.CharField(max_length=20, required=True)
+    latitude = serializers.FloatField(required=False, allow_null=True)
+    longitude = serializers.FloatField(required=False, allow_null=True)
     
     class Meta:
         model = User
-        fields = ('email', 'first_name', 'last_name', 'password', 'password_confirm')
+        fields = ('email', 'first_name', 'last_name', 'password', 'password_confirm', 'phone_number', 'latitude', 'longitude')
         extra_kwargs = {
             'email': {'required': True},
             'first_name': {'required': True},
@@ -30,13 +33,21 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         return attrs
     
     def create(self, validated_data):
+        # Extraire les données spécifiques au profil
+        phone_number = validated_data.pop('phone_number')
+        latitude = validated_data.pop('latitude', None)
+        longitude = validated_data.pop('longitude', None)
         validated_data.pop('password_confirm')
+        
+        # Créer l'utilisateur
         user = User.objects.create_user(**validated_data)
         
-        # Créer automatiquement le profil utilisateur
+        # Créer automatiquement le profil utilisateur avec les données fournies
         UserProfile.objects.create(
             user=user,
-            phone_number='',
+            phone_number=phone_number,
+            latitude=latitude,
+            longitude=longitude,
             notifications_enabled=True,
             email_notifications=True
         )

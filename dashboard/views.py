@@ -234,13 +234,14 @@ def users_management(request):
     """Gestion des utilisateurs"""
     
     search = request.GET.get('search', '')
-    users = User.objects.all()
+    users = User.objects.select_related('profile').all()
     
     if search:
         users = users.filter(
             Q(first_name__icontains=search) |
             Q(last_name__icontains=search) |
-            Q(email__icontains=search)
+            Q(email__icontains=search) |
+            Q(profile__phone_number__icontains=search)
         )
     
     # Pagination
