@@ -9,9 +9,9 @@
 </div>
 
 <!-- Statistiques principales -->
-<div class="row mb-4">
-    <div class="col-md-3">
-        <div class="stat-card">
+<div class="row row-cols-2 row-cols-sm-3 row-cols-lg-4 row-cols-xxl-5 g-3 mb-4">
+    <div class="col">
+        <div class="stat-card stat-users">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
                     <div class="stat-number">{{ total_users }}</div>
@@ -24,8 +24,8 @@
         </div>
     </div>
     
-    <div class="col-md-3">
-        <div class="stat-card">
+    <div class="col">
+        <div class="stat-card stat-qrcodes">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
                     <div class="stat-number">{{ total_qr_codes }}</div>
@@ -38,8 +38,8 @@
         </div>
     </div>
     
-    <div class="col-md-3">
-        <div class="stat-card">
+    <div class="col">
+        <div class="stat-card stat-scans">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
                     <div class="stat-number">{{ total_scans }}</div>
@@ -52,8 +52,8 @@
         </div>
     </div>
     
-    <div class="col-md-3">
-        <div class="stat-card">
+    <div class="col">
+        <div class="stat-card stat-points">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
                     <div class="stat-number">{{ total_points_distributed }}</div>
@@ -68,9 +68,9 @@
 </div>
 
 <!-- Nouvelles statistiques -->
-<div class="row mb-4">
-    <div class="col-md-3">
-        <div class="stat-card">
+<div class="row row-cols-2 row-cols-sm-3 row-cols-lg-4 row-cols-xxl-5 g-3 mb-4">
+    <div class="col">
+        <div class="stat-card stat-vendors">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
                     <div class="stat-number">{{ total_vendors }}</div>
@@ -83,8 +83,8 @@
         </div>
     </div>
     
-    <div class="col-md-3">
-        <div class="stat-card">
+    <div class="col">
+        <div class="stat-card stat-games">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
                     <div class="stat-number">{{ total_games_played }}</div>
@@ -97,8 +97,8 @@
         </div>
     </div>
     
-    <div class="col-md-3">
-        <div class="stat-card">
+    <div class="col">
+        <div class="stat-card stat-tokens">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
                     <div class="stat-number">{{ total_exchange_tokens }}</div>
@@ -111,8 +111,8 @@
         </div>
     </div>
     
-    <div class="col-md-3">
-        <div class="stat-card">
+    <div class="col">
+        <div class="stat-card stat-vendors-active">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
                     <div class="stat-number">{{ active_vendors }}</div>
@@ -127,9 +127,9 @@
 </div>
 
 <!-- Statistiques des grands prix -->
-<div class="row mb-4">
-    <div class="col-md-3">
-        <div class="stat-card">
+<div class="row row-cols-2 row-cols-sm-3 row-cols-lg-4 row-cols-xxl-5 g-3 mb-4">
+    <div class="col">
+        <div class="stat-card stat-grandprize">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
                     <div class="stat-number">{{ total_grand_prizes }}</div>
@@ -142,8 +142,8 @@
         </div>
     </div>
     
-    <div class="col-md-3">
-        <div class="stat-card">
+    <div class="col">
+        <div class="stat-card stat-participations">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
                     <div class="stat-number">{{ total_participations }}</div>
@@ -156,8 +156,8 @@
         </div>
     </div>
     
-    <div class="col-md-3">
-        <div class="stat-card">
+    <div class="col">
+        <div class="stat-card stat-tokens-active">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
                     <div class="stat-number">{{ active_exchange_tokens }}</div>
@@ -170,8 +170,8 @@
         </div>
     </div>
     
-    <div class="col-md-3">
-        <div class="stat-card">
+    <div class="col">
+        <div class="stat-card stat-recent-games">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
                     <div class="stat-number">{{ recent_games }}</div>
@@ -466,4 +466,88 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* Grille moderne et cartes compactes */
+  .stat-card {
+    background: var(--card-bg, linear-gradient(135deg, #43a047 0%, #66bb6a 100%));
+    color: #fff;
+    border: 0;
+    border-radius: 14px;
+    padding: 14px 16px; /* plus compact */
+    box-shadow: 0 6px 18px rgba(67, 160, 71, 0.25);
+    transition: transform .18s ease, box-shadow .18s ease, filter .18s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .stat-card::after {
+    content: '';
+    position: absolute;
+    top: -40%;
+    right: -40%;
+    width: 180px;
+    height: 180px;
+    background: radial-gradient(ellipse at center, rgba(255,255,255,0.25), rgba(255,255,255,0));
+    transform: rotate(25deg);
+  }
+  .stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 26px rgba(67, 160, 71, 0.35);
+    filter: saturate(1.08);
+  }
+
+  .stat-number {
+    font-size: 28px; /* réduit */
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: .5px;
+  }
+
+  .stat-label {
+    font-size: 12px;
+    opacity: .9;
+    margin-top: 6px;
+  }
+
+  .stat-icon i {
+    font-size: 28px; /* réduit */
+    opacity: .9;
+  }
+
+  /* Espacements de la grille */
+  .g-3 { gap: 0.75rem !important; }
+
+  /* Ajustements responsives subtils */
+  @media (min-width: 1400px) {
+    /* forcer 5 par ligne via row-cols-xxl-5 déjà appliqué */
+  }
+
+  @media (max-width: 575.98px) {
+    .stat-card { padding: 12px; }
+    .stat-number { font-size: 24px; }
+    .stat-icon i { font-size: 24px; }
+  }
+
+  /* Thèmes couleur par tuile */
+  .stat-users { --card-bg: linear-gradient(135deg, #2196F3, #64B5F6); }
+  .stat-qrcodes { --card-bg: linear-gradient(135deg, #9C27B0, #BA68C8); }
+  .stat-scans { --card-bg: linear-gradient(135deg, #00BCD4, #4DD0E1); }
+  .stat-points { --card-bg: linear-gradient(135deg, #FFC107, #FFD54F); color: #222; }
+  .stat-vendors { --card-bg: linear-gradient(135deg, #3F51B5, #7986CB); }
+  .stat-games { --card-bg: linear-gradient(135deg, #673AB7, #9575CD); }
+  .stat-tokens { --card-bg: linear-gradient(135deg, #FF9800, #FFB74D); }
+  .stat-vendors-active { --card-bg: linear-gradient(135deg, #4CAF50, #81C784); }
+  .stat-grandprize { --card-bg: linear-gradient(135deg, #E91E63, #F06292); }
+  .stat-participations { --card-bg: linear-gradient(135deg, #00ACC1, #26C6DA); }
+  .stat-tokens-active { --card-bg: linear-gradient(135deg, #FB8C00, #FFB74D); }
+  .stat-recent-games { --card-bg: linear-gradient(135deg, #8BC34A, #AED581); }
+
+  /* Ajuster lisibilité sur cartes claires (points/tokens-active) */
+  .stat-points .stat-number, .stat-points .stat-label, .stat-points .stat-icon i,
+  .stat-tokens-active .stat-number, .stat-tokens-active .stat-label, .stat-tokens-active .stat-icon i {
+    color: #2b2b2b;
+  }
+</style>
 {% endblock %}
