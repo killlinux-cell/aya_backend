@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from . import views_ads
 
 app_name = 'dashboard'
 
@@ -59,4 +60,11 @@ urlpatterns = [
     path('qr-codes-analytics/', views.qr_codes_analytics, name='qr_codes_analytics'),
     path('system-health/', views.system_health, name='system_health'),
     path('bulk-operations/', views.bulk_operations, name='bulk_operations'),
+    
+    # Gestion des publicités vidéo
+    path('advertisements/', views_ads.advertisements_management, name='advertisements'),
+    path('advertisements/create/', views_ads.create_advertisement, name='create_advertisement'),
+    path('advertisements/<uuid:ad_id>/toggle/', views_ads.toggle_advertisement_status, name='toggle_advertisement_status'),
+    path('advertisements/<uuid:ad_id>/delete/', views_ads.delete_advertisement, name='delete_advertisement'),
 ]
+

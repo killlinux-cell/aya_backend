@@ -1,0 +1,181 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Dashboard - Publicités Vidéo{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-video"></i> Gestion des Publicités Vidéo</h1>
+    <p>Gérer les vidéos publicitaires affichées dans l'application mobile</p>
+</div>
+
+<!-- Statistiques -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <h3>{{ stats.total }}</h3>
+                <p class="mb-0">Total</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <h3>{{ stats.active }}</h3>
+                <p class="mb-0">Actives</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <h3>{{ stats.inactive }}</h3>
+                <p class="mb-0">Inactives</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <h3>{{ stats.total_views }}</h3>
+                <p class="mb-0">Vues Totales</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bouton Ajouter -->
+<div class="mb-4">
+    <a href="{% url 'dashboard:create_advertisement' %}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Ajouter une Vidéo Publicitaire
+    </a>
+</div>
+
+<!-- Recherche -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            <div class="col-md-10">
+                <input type="text" class="form-control" name="search" 
+                       placeholder="Rechercher par titre..." 
+                       value="{{ search }}">
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-search"></i> Rechercher
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Liste des publicités -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">Liste des Publicités Vidéo ({{ page_obj.paginator.count }} total)</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Titre</th>
+                        <th>Vidéo</th>
+                        <th>Durée</th>
+                        <th>Priorité</th>
+                        <th>Vues</th>
+                        <th>Statut</th>
+                        <th>Créé le</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ad in page_obj %}
+                    <tr>
+                        <td>
+                            <strong>{{ ad.title }}</strong>
+                            {% if ad.description %}
+                            <br><small class="text-muted">{{ ad.description|truncatewords:10 }}</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if ad.thumbnail %}
+                            <img src="{{ ad.thumbnail.url }}" alt="Thumbnail" style="width: 60px; height: 40px; object-fit: cover; border-radius: 4px;">
+                            {% else %}
+                            <i class="fas fa-video fa-2x text-muted"></i>
+                            {% endif %}
+                        </td>
+                        <td>{{ ad.duration }}s</td>
+                        <td>
+                            <span class="badge bg-secondary">{{ ad.priority }}</span>
+                        </td>
+                        <td>
+                            <span class="badge bg-info">{{ ad.views_count }}</span>
+                        </td>
+                        <td>
+                            {% if ad.status == 'active' %}
+                            <span class="badge bg-success">Actif</span>
+                            {% else %}
+                            <span class="badge bg-warning">Inactif</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ ad.created_at|date:"d/m/Y H:i" }}</td>
+                        <td>
+                            <a href="{% url 'dashboard:toggle_advertisement_status' ad.id %}" 
+                               class="btn btn-sm btn-warning" title="Activer/Désactiver">
+                                <i class="fas fa-power-off"></i>
+                            </a>
+                            <a href="{% url 'dashboard:delete_advertisement' ad.id %}" 
+                               class="btn btn-sm btn-danger" 
+                               onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette publicité ?')">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center text-muted py-4">
+                            <i class="fas fa-video fa-3x mb-3"></i>
+                            <br>
+                            Aucune publicité trouvée
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Pagination -->
+{% if page_obj.has_other_pages %}
+<nav aria-label="Pagination" class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="?page=1{% if search %}&search={{ search }}{% endif %}">Premier</a>
+        </li>
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search }}{% endif %}">Précédent</a>
+        </li>
+        {% endif %}
+        
+        <li class="page-item active">
+            <span class="page-link">
+                Page {{ page_obj.number }} sur {{ page_obj.paginator.num_pages }}
+            </span>
+        </li>
+        
+        {% if page_obj.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search }}{% endif %}">Suivant</a>
+        </li>
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search %}&search={{ search }}{% endif %}">Dernier</a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+{% endblock %}
+

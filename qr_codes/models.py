@@ -18,11 +18,18 @@ class QRCode(models.Model):
         ('mystery_box', 'Boîte Mystère'),
     ]
     
+    CATEGORY_CHOICES = [
+        ('1.5L', 'Bouteille 1.5 L'),
+        ('5L', 'Bouteille 5 L'),
+        ('bedon', 'Bedon'),
+    ]
+    
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     code = models.CharField(max_length=100, unique=True)
     points = models.IntegerField()
     description = models.TextField(max_length=500)
     prize_type = models.CharField(max_length=20, choices=PRIZE_TYPES, default='points')
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='1.5L', help_text="Catégorie de la bouteille")
     is_active = models.BooleanField(default=True)
     expires_at = models.DateTimeField(null=True, blank=True)
     

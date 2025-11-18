@@ -25,9 +25,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = config('SECRET_KEY', default='django-insecure-(xiy56oj+q9vlkvn0m-2ade0my=d!j4s*pqt50wh9#n$o9d&6w')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config('DEBUG', default=False, cast=bool)
+DEBUG = config('DEBUG', default=True, cast=bool)  # True pour développement local
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,10.0.2.2,192.168.0.109,0.0.0.0,aya-plus.orapide.shop,199.231.191.234').split(',')
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,10.0.2.2,192.168.0.109,192.168.1.57,192.168.56.1,0.0.0.0,aya-plus.orapide.shop,199.231.191.234,*').split(',')
 
 
 # Application definition
@@ -140,7 +140,7 @@ STATIC_ROOT = '/var/www/aya_backend/static/'
 
 # Media files
 MEDIA_URL = '/media/'
-MEDIA_ROOT = '/var/www/aya_backend/media/'
+MEDIA_ROOT = BASE_DIR / 'media'  # Utilise le dossier media du projet
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

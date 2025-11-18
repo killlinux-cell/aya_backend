@@ -1,4 +1,5 @@
 from django.db import models
+from .models_ads import VideoAdvertisement
 from django.contrib.auth import get_user_model
 from qr_codes.models import QRCode
 import uuid

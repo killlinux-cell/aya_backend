@@ -542,49 +542,150 @@ def bulk_generate_qr_codes(request):
     return JsonResponse({'success': False, 'error': 'Méthode non autorisée'})
 
 
+def generate_standard_scenario(request, batch_number):
+    """Génère automatiquement le scénario standard de 50 000 QR codes"""
+    print(f"🎯 MODE STANDARD : Génération du scénario complet pour le lot {batch_number}")
+    
+    # Scénario standard selon vos spécifications
+    batches_config = [
+        # Points
+        {'type': 'points', 'points': 10, 'quantity': 25000, 'category': '1.5L', 'desc': '10 points'},
+        {'type': 'points', 'points': 50, 'quantity': 15000, 'category': '1.5L', 'desc': '50 points'},
+        {'type': 'points', 'points': 100, 'quantity': 5000, 'category': '5L', 'desc': '100 points'},
+        # Try Again
+        {'type': 'try_again', 'points': 0, 'quantity': 4500, 'category': '1.5L', 'desc': 'Try Again'},
+        # Special
+        {'type': 'loyalty_bonus', 'points': 0, 'quantity': 500, 'category': 'bedon', 'desc': 'Loyalty Bonus'},
+    ]
+    
+    total_generated = 0
+    sequence = 1
+    
+    for config in batches_config:
+        prize_type = config['type']
+        points = config['points']
+        quantity = config['quantity']
+        category = config['category']
+        description_type = config['desc']
+        
+        print(f"📦 Génération : {quantity} × {description_type} ({category})...")
+        
+        for i in range(quantity):
+            code = f"{batch_number}{sequence:05d}"
+            QRCode.objects.create(
+                code=code,
+                points=points,
+                description=f"Lot {batch_number} - {description_type} - {category} - QR #{sequence}",
+                prize_type=prize_type,
+                category=category,
+                is_active=True,
+                created_by=request.user,
+                batch_number=batch_number,
+                batch_sequence=sequence,
+                is_printed=True
+            )
+            sequence += 1
+            total_generated += 1
+            
+            # Progrès tous les 5000 QR
+            if total_generated % 5000 == 0:
+                print(f"✅ {total_generated} QR codes générés...")
+    
+    print(f"🎉 TERMINÉ : {total_generated} QR codes générés selon le scénario standard!")
+    
+    # Statistiques
+    stats = {
+        'batch_number': batch_number,
+        'total_generated': total_generated,
+        'mode': 'standard',
+        'breakdown': {
+            '10_points': 25000,
+            '50_points': 15000,
+            '100_points': 5000,
+            'try_again': 4500,
+            'loyalty_bonus': 500
+        }
+    }
+    
+    messages.success(request, f'🎉 Scénario Standard généré ! {total_generated} QR codes créés (Lot {batch_number})')
+    return JsonResponse({
+        'success': True,
+        'stats': stats,
+        'message': f'Lot {batch_number} généré avec succès selon le scénario standard.'
+    })
+
+
 @login_required
 @user_passes_test(is_admin)
 def generate_batch_qr_codes(request):
-    """Générer un lot de QR codes selon le scénario de bouteilles - VERSION SIMPLIFIÉE"""
+    """Générer un lot de QR codes avec configuration personnalisée (Batch, Quantity, Category, Type)"""
     
     if request.method == 'POST':
         try:
+            # Récupérer le mode de génération
+            generation_mode = request.POST.get('generation_mode', 'custom')
             batch_number = request.POST.get('batch_number', '4151000')
             
             # Vérifier si le lot existe déjà
             if QRCode.objects.filter(batch_number=batch_number).exists():
                 messages.error(request, f'Le lot {batch_number} existe déjà ! Choisissez un autre numéro de lot.')
-                return JsonResponse({
-                    'success': False,
-                    'error': f'Le lot {batch_number} existe déjà !'
-                })
+                return redirect('dashboard:bulk_operations')
             
-            # SCÉNARIO FIXE - 50 000 QR codes exactement
-            scenario = {
-                '10_points': 25000,    # 50% - QR codes gagnants 10 points
-                '50_points': 15000,    # 30% - QR codes gagnants 50 points  
-                '100_points': 5000,    # 10% - QR codes gagnants 100 points
-                'try_again': 4000,     # 8% - QR codes "Réessayer"
-                'loyalty_bonus': 500,  # 1% - QR codes "Bonus Fidélité"
-                'mystery_box': 500,    # 1% - QR codes "Mystery Box"
-            }
+            # MODE STANDARD : Génération automatique selon scénario
+            if generation_mode == 'standard':
+                return generate_standard_scenario(request, batch_number)
             
-            total_codes = sum(scenario.values())  # 50 000 exactement
+            # MODE PERSONNALISÉ : Configuration manuelle
+            total_qr_codes = int(request.POST.get('total_qr_codes', 50000))
+            category = request.POST.get('category', '1.5L')
+            prize_type = request.POST.get('prize_type', 'points')
             
-            print(f"🚀 Génération du lot {batch_number} avec {total_codes} QR codes...")
+            # Déterminer les points ou le type spécial
+            points_value = 0
+            special_type = None
+            actual_prize_type = prize_type
+            
+            if prize_type == 'points':
+                points_value = int(request.POST.get('points_value', 10))
+                actual_prize_type = 'points'
+            elif prize_type == 'special':
+                special_type = request.POST.get('special_type', 'loyalty_bonus')
+                actual_prize_type = special_type
+                points_value = 0  # Les spéciaux n'ont pas de points
+            elif prize_type == 'try_again':
+                actual_prize_type = 'try_again'
+                points_value = 0  # Try again n'a pas de points
+            
+            total_codes = total_qr_codes
+            
+            # Déterminer la description
+            if actual_prize_type == 'points':
+                type_description = f"{points_value} points"
+            elif actual_prize_type == 'try_again':
+                type_description = "Réessayer"
+            else:
+                type_description = actual_prize_type.replace('_', ' ').title()
+            
+            print(f"🚀 Génération du lot {batch_number}:")
+            print(f"   - Nombre: {total_codes} QR codes")
+            print(f"   - Catégorie: {category}")
+            print(f"   - Type: {actual_prize_type}")
+            print(f"   - Points: {points_value}")
             
             generated_codes = []
             sequence = 1
             
-            # 1. Générer les QR codes gagnants (10 points) - 25 000
-            print(f"📦 Génération des QR codes 10 points...")
-            for i in range(scenario['10_points']):
+            # Générer tous les QR codes avec la même configuration
+            print(f"📦 Génération de {total_codes} QR codes {type_description}...")
+            
+            for i in range(total_codes):
                 code = f"{batch_number}{sequence:05d}"
                 qr_code = QRCode.objects.create(
                     code=code,
-                    points=10,
-                    description=f"Lot {batch_number} - 10 points - QR #{sequence}",
-                    prize_type='points',
+                    points=points_value,
+                    description=f"Lot {batch_number} - {type_description} - {category} - QR #{sequence}",
+                    prize_type=actual_prize_type,
+                    category=category,
                     is_active=True,
                     created_by=request.user,
                     batch_number=batch_number,
@@ -594,145 +695,26 @@ def generate_batch_qr_codes(request):
                 generated_codes.append({
                     'code': qr_code.code,
                     'points': qr_code.points,
-                    'type': '10 points'
+                    'type': type_description,
+                    'category': category
                 })
                 sequence += 1
                 
-                # Afficher le progrès tous les 5000 QR codes
-                if sequence % 5000 == 1:
-                    print(f"✅ {sequence-1} QR codes 10 points générés...")
+                # Afficher le progrès tous les 1000 QR codes
+                if i > 0 and i % 1000 == 0:
+                    print(f"✅ {i} QR codes générés...")
             
-            # 2. Générer les QR codes gagnants (50 points) - 15 000
-            print(f"📦 Génération des QR codes 50 points...")
-            for i in range(scenario['50_points']):
-                code = f"{batch_number}{sequence:05d}"
-                qr_code = QRCode.objects.create(
-                    code=code,
-                    points=50,
-                    description=f"Lot {batch_number} - 50 points - QR #{sequence}",
-                    prize_type='points',
-                    is_active=True,
-                    created_by=request.user,
-                    batch_number=batch_number,
-                    batch_sequence=sequence,
-                    is_printed=True
-                )
-                generated_codes.append({
-                    'code': qr_code.code,
-                    'points': qr_code.points,
-                    'type': '50 points'
-                })
-                sequence += 1
-                
-                if sequence % 5000 == 1:
-                    print(f"✅ {sequence-1} QR codes 50 points générés...")
-            
-            # 3. Générer les QR codes gagnants (100 points) - 5 000
-            print(f"📦 Génération des QR codes 100 points...")
-            for i in range(scenario['100_points']):
-                code = f"{batch_number}{sequence:05d}"
-                qr_code = QRCode.objects.create(
-                    code=code,
-                    points=100,
-                    description=f"Lot {batch_number} - 100 points - QR #{sequence}",
-                    prize_type='points',
-                    is_active=True,
-                    created_by=request.user,
-                    batch_number=batch_number,
-                    batch_sequence=sequence,
-                    is_printed=True
-                )
-                generated_codes.append({
-                    'code': qr_code.code,
-                    'points': qr_code.points,
-                    'type': '100 points'
-                })
-                sequence += 1
-                
-                if sequence % 1000 == 1:
-                    print(f"✅ {sequence-1} QR codes 100 points générés...")
-            
-            # 4. Générer les QR codes "Réessayer" - 4 500
-            print(f"📦 Génération des QR codes 'Réessayer'...")
-            for i in range(scenario['try_again']):
-                code = f"{batch_number}{sequence:05d}"
-                qr_code = QRCode.objects.create(
-                    code=code,
-                    points=0,
-                    description=f"Lot {batch_number} - Réessayer - QR #{sequence}",
-                    prize_type='try_again',
-                    is_active=True,
-                    created_by=request.user,
-                    batch_number=batch_number,
-                    batch_sequence=sequence,
-                    is_printed=True
-                )
-                generated_codes.append({
-                    'code': qr_code.code,
-                    'points': qr_code.points,
-                    'type': 'Réessayer'
-                })
-                sequence += 1
-                
-                if sequence % 1000 == 1:
-                    print(f"✅ {sequence-1} QR codes 'Réessayer' générés...")
-            
-            # 5. Générer les QR codes "Bonus Fidélité" - 500
-            print(f"📦 Génération des QR codes 'Bonus Fidélité'...")
-            for i in range(scenario['loyalty_bonus']):
-                code = f"{batch_number}{sequence:05d}"
-                qr_code = QRCode.objects.create(
-                    code=code,
-                    points=0,
-                    description=f"Lot {batch_number} - Bonus Fidélité - QR #{sequence}",
-                    prize_type='loyalty_bonus',
-                    is_active=True,
-                    created_by=request.user,
-                    batch_number=batch_number,
-                    batch_sequence=sequence,
-                    is_printed=True
-                )
-                generated_codes.append({
-                    'code': qr_code.code,
-                    'points': qr_code.points,
-                    'type': 'Bonus Fidélité'
-                })
-                sequence += 1
-
-            # Generate 'mystery_box' QR codes
-            for i in range(scenario['mystery_box']):
-                code = f"{batch_number}{sequence:05d}"
-                qr_code = QRCode.objects.create(
-                    code=code,
-                    points=0,
-                    description=f"Lot {batch_number} - Mystery Box - QR #{sequence}",
-                    prize_type='mystery_box',
-                    is_active=True,
-                    created_by=request.user,
-                    batch_number=batch_number,
-                    batch_sequence=sequence,
-                    is_printed=True
-                )
-                generated_codes.append({
-                    'code': qr_code.code,
-                    'points': qr_code.points,
-                    'type': 'Mystery Box'
-                })
-                sequence += 1
-            
-            print(f"🎉 Lot {batch_number} généré avec succès ! {total_codes} QR codes créés.")
+            print(f"✅ TERMINÉ : {total_codes} QR codes générés!")
             
             # Statistiques du lot
             stats = {
                 'batch_number': batch_number,
-                'total_generated': len(generated_codes),
-                'winning_10': scenario['10_points'],
-                'winning_50': scenario['50_points'],
-                'winning_100': scenario['100_points'],
-                'try_again': scenario['try_again'],
-                'loyalty_bonus': scenario['loyalty_bonus'],
-                'mystery_box': scenario['mystery_box'],
-                'total_points_distributed': (scenario['10_points'] * 10) + (scenario['50_points'] * 50) + (scenario['100_points'] * 100)
+                'total_generated': total_codes,
+                'category': category,
+                'prize_type': actual_prize_type,
+                'points_value': points_value,
+                'type_description': type_description,
+                'total_points_distributed': total_codes * points_value
             }
             
             messages.success(request, f'🎉 Lot {batch_number} généré avec succès ! {total_codes} QR codes créés et prêts pour l\'impression.')
