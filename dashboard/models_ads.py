@@ -115,3 +115,57 @@ class VideoAdvertisement(models.Model):
         self.views_count += 1
         self.save(update_fields=['views_count'])
 
+
+class HomeBanner(models.Model):
+    """
+    Bannière affichée en haut de l'écran d'accueil de l'application mobile.
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    title = models.CharField(
+        max_length=150,
+        blank=True,
+        verbose_name="Titre"
+    )
+    subtitle = models.CharField(
+        max_length=255,
+        blank=True,
+        verbose_name="Sous-titre"
+    )
+    image = models.ImageField(
+        upload_to='advertisements/banners/',
+        blank=True,
+        null=True,
+        verbose_name="Image"
+    )
+    button_text = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name="Texte du bouton"
+    )
+    button_url = models.URLField(
+        blank=True,
+        verbose_name="Lien du bouton"
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name="Actif"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'home_banners'
+        verbose_name = "Bannière d'accueil"
+        verbose_name_plural = "Bannières d'accueil"
+        ordering = ['-updated_at']
+
+    def __str__(self):
+        return self.title or "Bannière sans titre"
+
+    @property
+    def image_url(self):
+        if self.image:
+            return self.image.url
+        return None
+

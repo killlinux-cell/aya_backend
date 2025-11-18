@@ -15,6 +15,7 @@ from authentication.models import User, Vendor
 from authentication.models_grand_prix import GrandPrix, GrandPrixParticipation, GrandPrixPrize
 from qr_codes.models import QRCode, UserQRCode, GameHistory, ExchangeRequest, ExchangeToken
 from django.core.paginator import Paginator
+import csv
 
 def is_admin(user):
     """Vérifier si l'utilisateur est admin"""
@@ -90,6 +91,39 @@ def dashboard_home(request):
             'prizes': GrandPrixPrize.objects.filter(grand_prix=current_grand_prix).order_by('position')
         }
     
+    # Statistiques QR par catégorie
+    generated_by_category = QRCode.objects.values('category').annotate(
+        total_generated=Count('id'),
+        active_generated=Count('id', filter=Q(is_active=True)),
+        total_points=Sum('points')
+    )
+    scanned_by_category = UserQRCode.objects.values('qr_code__category').annotate(
+        total_scans=Count('id'),
+        points_distributed=Sum('points_earned')
+    )
+
+    generated_map = {item['category']: item for item in generated_by_category}
+    scanned_map = {item['qr_code__category']: item for item in scanned_by_category}
+
+    qr_category_stats = []
+    for key, label in QRCode.CATEGORY_CHOICES:
+        gen = generated_map.get(key, {})
+        scan = scanned_map.get(key, {})
+        total_generated = gen.get('total_generated', 0) or 0
+        total_scans = scan.get('total_scans', 0) or 0
+        scan_rate = round((total_scans / total_generated) * 100, 1) if total_generated else 0
+
+        qr_category_stats.append({
+            'key': key,
+            'label': label,
+            'generated': total_generated,
+            'active': gen.get('active_generated', 0) or 0,
+            'scans': total_scans,
+            'scan_rate': scan_rate,
+            'points_generated': gen.get('total_points', 0) or 0,
+            'points_distributed': scan.get('points_distributed', 0) or 0,
+        })
+
     context = {
         'total_users': total_users,
         'total_qr_codes': total_qr_codes,
@@ -111,6 +145,7 @@ def dashboard_home(request):
         'total_grand_prizes': total_grand_prizes,
         'total_participations': total_participations,
         'current_grand_prix': current_grand_prix_info,
+        'qr_category_stats': qr_category_stats,
     }
     
     return render(request, 'dashboard/home.html', context)
@@ -255,6 +290,38 @@ def users_management(request):
     }
     
     return render(request, 'dashboard/users.html', context)
+
+
+@login_required
+@user_passes_test(is_admin)
+def export_users_csv(request):
+    """Exporter la liste des utilisateurs au format CSV."""
+    timestamp = timezone.now().strftime('%Y%m%d_%H%M')
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="utilisateurs_{timestamp}.csv"'
+
+    writer = csv.writer(response)
+    writer.writerow([
+        'Nom complet',
+        'Email',
+        'Téléphone',
+        'Points disponibles',
+        'Date d’inscription',
+    ])
+
+    users = User.objects.select_related('profile').order_by('last_name', 'first_name')
+    for user in users:
+        profile = getattr(user, 'profile', None)
+        phone = getattr(profile, 'phone_number', '') if profile else ''
+        writer.writerow([
+            user.get_full_name(),
+            user.email,
+            phone,
+            getattr(user, 'available_points', 0),
+            user.created_at.strftime('%d/%m/%Y %H:%M') if hasattr(user, 'created_at') else '',
+        ])
+
+    return response
 
 @login_required
 @user_passes_test(is_admin)
@@ -1393,6 +1460,47 @@ def cleanup_expired_tokens(request):
         messages.error(request, f'Erreur lors du nettoyage: {str(e)}')
     
     return redirect('dashboard:exchange_tokens_management')
+
+
+@login_required
+@user_passes_test(is_admin)
+def token_stats_api(request):
+    """API JSON pour le modal de statistiques des tokens."""
+    try:
+        now = timezone.now()
+        week_ago = now - timedelta(days=7)
+
+        total_tokens = ExchangeToken.objects.count()
+        active_tokens = ExchangeToken.objects.filter(
+            is_used=False,
+            expires_at__gt=now
+        ).count()
+        expired_tokens = ExchangeToken.objects.filter(
+            is_used=False,
+            expires_at__lte=now
+        ).count()
+        used_tokens = ExchangeToken.objects.filter(is_used=True).count()
+
+        daily_data = []
+        for i in range(7):
+            day = (week_ago + timedelta(days=i)).date()
+            created = ExchangeToken.objects.filter(created_at__date=day).count()
+            used = ExchangeToken.objects.filter(is_used=True, used_at__date=day).count()
+            daily_data.append({
+                'date': day.strftime('%d/%m'),
+                'created': created,
+                'used': used,
+            })
+
+        return JsonResponse({
+            'total_tokens': total_tokens,
+            'active_tokens': active_tokens,
+            'expired_tokens': expired_tokens,
+            'used_tokens': used_tokens,
+            'daily': daily_data,
+        })
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
 
 # ===== GESTION DES GRANDS PRIX =====
 

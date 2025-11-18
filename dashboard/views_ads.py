@@ -8,7 +8,7 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.core.paginator import Paginator
-from .models_ads import VideoAdvertisement
+from .models_ads import VideoAdvertisement, HomeBanner
 from .serializers_ads import VideoAdvertisementSerializer
 import random
 
@@ -137,6 +137,79 @@ def delete_advertisement(request, ad_id):
         messages.error(request, 'Publicité introuvable')
     
     return redirect('dashboard:advertisements')
+
+
+@login_required
+@user_passes_test(is_admin)
+def home_banner_settings(request):
+    """
+    Page de gestion de la bannière d'accueil (image affichée au-dessus de "Mes Points").
+    """
+    banner = HomeBanner.objects.first()
+
+    if not banner:
+        banner = HomeBanner.objects.create(
+            title="Aya+",
+            subtitle="Fidélisez vos clients avec style",
+            button_text="Découvrir Aya+",
+            button_url="https://example.com",
+        )
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+
+        if action == 'reset_image':
+            if banner.image:
+                banner.image.delete(save=False)
+                banner.image = None
+                banner.save(update_fields=['image', 'updated_at'])
+                messages.success(request, "Image réinitialisée avec succès.")
+            else:
+                messages.info(request, "Aucune image à réinitialiser.")
+            return redirect('dashboard:home_banner')
+
+        banner.title = request.POST.get('title', '').strip()
+        banner.subtitle = request.POST.get('subtitle', '').strip()
+        banner.button_text = request.POST.get('button_text', '').strip()
+        banner.button_url = request.POST.get('button_url', '').strip()
+        banner.is_active = request.POST.get('is_active') == 'on'
+
+        if request.FILES.get('image'):
+            banner.image = request.FILES['image']
+
+        banner.save()
+        messages.success(request, "Bannière mise à jour avec succès.")
+        return redirect('dashboard:home_banner')
+
+    context = {
+        'banner': banner
+    }
+    return render(request, 'dashboard/home_banner.html', context)
+
+
+@api_view(['GET'])
+@permission_classes([permissions.AllowAny])
+def home_banner_details(request):
+    """
+    API pour récupérer la bannière active affichée dans l'application mobile.
+    Endpoint : /api/advertisements/banner/
+    """
+    banner = HomeBanner.objects.filter(is_active=True).order_by('-updated_at').first()
+
+    if not banner:
+        return Response({'banner': None})
+
+    banner_data = {
+        'id': str(banner.id),
+        'title': banner.title,
+        'subtitle': banner.subtitle,
+        'button_text': banner.button_text,
+        'button_url': banner.button_url,
+        'image_url': request.build_absolute_uri(banner.image.url) if banner.image else None,
+        'updated_at': banner.updated_at.isoformat(),
+    }
+
+    return Response({'banner': banner_data})
 
 
 @login_required

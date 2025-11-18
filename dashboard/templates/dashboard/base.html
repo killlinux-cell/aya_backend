@@ -232,6 +232,18 @@
                             </a>
                         </li>
                         <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'advertisements' %}active{% endif %}" 
+                               href="{% url 'dashboard:advertisements' %}">
+                                <i class="fas fa-video"></i> Publicités Vidéo
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'home_banner' %}active{% endif %}" 
+                               href="{% url 'dashboard:home_banner' %}">
+                                <i class="fas fa-image"></i> Bannière Accueil
+                            </a>
+                        </li>
+                        <li class="nav-item">
                             <a class="nav-link {% if request.resolver_match.url_name == 'exchange_tokens' %}active{% endif %}" 
                                href="{% url 'dashboard:exchange_tokens' %}">
                                 <i class="fas fa-key"></i> Tokens d'Échange

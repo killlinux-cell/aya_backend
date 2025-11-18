@@ -28,6 +28,7 @@ urlpatterns = [
     
     # Gestion des utilisateurs
     path('users/', views.users_management, name='users'),
+    path('export/users/', views.export_users_csv, name='export_users'),
     
     # Analytics
     path('analytics/', views.analytics, name='analytics'),
@@ -51,6 +52,7 @@ urlpatterns = [
     # Gestion des tokens d'échange
     path('exchange-tokens/', views.exchange_tokens_management, name='exchange_tokens'),
     path('exchange-tokens/cleanup/', views.cleanup_expired_tokens, name='cleanup_expired_tokens'),
+    path('api/token-stats/', views.token_stats_api, name='token_stats_api'),
     
     # Gestion des grands prix
     path('grand-prix/', views.grand_prix_management, name='grand_prix'),
@@ -66,5 +68,6 @@ urlpatterns = [
     path('advertisements/create/', views_ads.create_advertisement, name='create_advertisement'),
     path('advertisements/<uuid:ad_id>/toggle/', views_ads.toggle_advertisement_status, name='toggle_advertisement_status'),
     path('advertisements/<uuid:ad_id>/delete/', views_ads.delete_advertisement, name='delete_advertisement'),
+    path('banner/', views_ads.home_banner_settings, name='home_banner'),
 ]
 
