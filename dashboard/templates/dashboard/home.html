@@ -9,177 +9,153 @@
 </div>
 
 <!-- Statistiques principales -->
-<div class="row row-cols-2 row-cols-sm-3 row-cols-lg-4 row-cols-xxl-5 g-3 mb-4">
-    <div class="col">
-        <div class="stat-card stat-users">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <div class="stat-number">{{ total_users }}</div>
-                    <div class="stat-label">Utilisateurs</div>
-                </div>
-                <div class="stat-icon">
-                    <i class="fas fa-users"></i>
-                </div>
+<div class="stats-grid mb-4">
+    <div class="stat-card stat-users">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <div class="stat-number">{{ total_users }}</div>
+                <div class="stat-label">Utilisateurs</div>
+            </div>
+            <div class="stat-icon">
+                <i class="fas fa-users"></i>
             </div>
         </div>
     </div>
     
-    <div class="col">
-        <div class="stat-card stat-qrcodes">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <div class="stat-number">{{ total_qr_codes }}</div>
-                    <div class="stat-label">QR Codes</div>
-                </div>
-                <div class="stat-icon">
-                    <i class="fas fa-qrcode"></i>
-                </div>
+    <div class="stat-card stat-qrcodes">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <div class="stat-number">{{ total_qr_codes }}</div>
+                <div class="stat-label">QR Codes</div>
+            </div>
+            <div class="stat-icon">
+                <i class="fas fa-qrcode"></i>
             </div>
         </div>
     </div>
     
-    <div class="col">
-        <div class="stat-card stat-scans">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <div class="stat-number">{{ total_scans }}</div>
-                    <div class="stat-label">Scans Total</div>
-                </div>
-                <div class="stat-icon">
-                    <i class="fas fa-mobile-alt"></i>
-                </div>
+    <div class="stat-card stat-scans">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <div class="stat-number">{{ total_scans }}</div>
+                <div class="stat-label">Scans Total</div>
+            </div>
+            <div class="stat-icon">
+                <i class="fas fa-mobile-alt"></i>
             </div>
         </div>
     </div>
     
-    <div class="col">
-        <div class="stat-card stat-points">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <div class="stat-number">{{ total_points_distributed }}</div>
-                    <div class="stat-label">Points Distribués</div>
-                </div>
-                <div class="stat-icon">
-                    <i class="fas fa-coins"></i>
-                </div>
+    <div class="stat-card stat-points">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <div class="stat-number">{{ total_points_distributed }}</div>
+                <div class="stat-label">Points Distribués</div>
+            </div>
+            <div class="stat-icon">
+                <i class="fas fa-coins"></i>
             </div>
         </div>
     </div>
 </div>
 
 <!-- Nouvelles statistiques -->
-<div class="row row-cols-2 row-cols-sm-3 row-cols-lg-4 row-cols-xxl-5 g-3 mb-4">
-    <div class="col">
-        <div class="stat-card stat-vendors">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <div class="stat-number">{{ total_vendors }}</div>
-                    <div class="stat-label">Vendeurs</div>
-                </div>
-                <div class="stat-icon">
-                    <i class="fas fa-store"></i>
-                </div>
+<div class="stats-grid mb-4">
+    <div class="stat-card stat-vendors">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <div class="stat-number">{{ total_vendors }}</div>
+                <div class="stat-label">Vendeurs</div>
+            </div>
+            <div class="stat-icon">
+                <i class="fas fa-store"></i>
             </div>
         </div>
     </div>
     
-    <div class="col">
-        <div class="stat-card stat-games">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <div class="stat-number">{{ total_games_played }}</div>
-                    <div class="stat-label">Jeux Joués</div>
-                </div>
-                <div class="stat-icon">
-                    <i class="fas fa-gamepad"></i>
-                </div>
+    <div class="stat-card stat-games">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <div class="stat-number">{{ total_games_played }}</div>
+                <div class="stat-label">Jeux Joués</div>
+            </div>
+            <div class="stat-icon">
+                <i class="fas fa-gamepad"></i>
             </div>
         </div>
     </div>
     
-    <div class="col">
-        <div class="stat-card stat-tokens">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <div class="stat-number">{{ total_exchange_tokens }}</div>
-                    <div class="stat-label">Tokens d'Échange</div>
-                </div>
-                <div class="stat-icon">
-                    <i class="fas fa-ticket-alt"></i>
-                </div>
+    <div class="stat-card stat-tokens">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <div class="stat-number">{{ total_exchange_tokens }}</div>
+                <div class="stat-label">Tokens d'Échange</div>
+            </div>
+            <div class="stat-icon">
+                <i class="fas fa-ticket-alt"></i>
             </div>
         </div>
     </div>
     
-    <div class="col">
-        <div class="stat-card stat-vendors-active">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <div class="stat-number">{{ active_vendors }}</div>
-                    <div class="stat-label">Vendeurs Actifs</div>
-                </div>
-                <div class="stat-icon">
-                    <i class="fas fa-check-circle"></i>
-                </div>
+    <div class="stat-card stat-vendors-active">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <div class="stat-number">{{ active_vendors }}</div>
+                <div class="stat-label">Vendeurs Actifs</div>
+            </div>
+            <div class="stat-icon">
+                <i class="fas fa-check-circle"></i>
             </div>
         </div>
     </div>
 </div>
 
 <!-- Statistiques des grands prix -->
-<div class="row row-cols-2 row-cols-sm-3 row-cols-lg-4 row-cols-xxl-5 g-3 mb-4">
-    <div class="col">
-        <div class="stat-card stat-grandprize">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <div class="stat-number">{{ total_grand_prizes }}</div>
-                    <div class="stat-label">Grands Prix</div>
-                </div>
-                <div class="stat-icon">
-                    <i class="fas fa-trophy"></i>
-                </div>
+<div class="stats-grid mb-4">
+    <div class="stat-card stat-grandprize">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <div class="stat-number">{{ total_grand_prizes }}</div>
+                <div class="stat-label">Grands Prix</div>
+            </div>
+            <div class="stat-icon">
+                <i class="fas fa-trophy"></i>
             </div>
         </div>
     </div>
     
-    <div class="col">
-        <div class="stat-card stat-participations">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <div class="stat-number">{{ total_participations }}</div>
-                    <div class="stat-label">Participations</div>
-                </div>
-                <div class="stat-icon">
-                    <i class="fas fa-users"></i>
-                </div>
+    <div class="stat-card stat-participations">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <div class="stat-number">{{ total_participations }}</div>
+                <div class="stat-label">Participations</div>
+            </div>
+            <div class="stat-icon">
+                <i class="fas fa-users"></i>
             </div>
         </div>
     </div>
     
-    <div class="col">
-        <div class="stat-card stat-tokens-active">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <div class="stat-number">{{ active_exchange_tokens }}</div>
-                    <div class="stat-label">Tokens Actifs</div>
-                </div>
-                <div class="stat-icon">
-                    <i class="fas fa-ticket-alt"></i>
-                </div>
+    <div class="stat-card stat-tokens-active">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <div class="stat-number">{{ active_exchange_tokens }}</div>
+                <div class="stat-label">Tokens Actifs</div>
+            </div>
+            <div class="stat-icon">
+                <i class="fas fa-ticket-alt"></i>
             </div>
         </div>
     </div>
     
-    <div class="col">
-        <div class="stat-card stat-recent-games">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <div class="stat-number">{{ recent_games }}</div>
-                    <div class="stat-label">Jeux (7j)</div>
-                </div>
-                <div class="stat-icon">
-                    <i class="fas fa-gamepad"></i>
-                </div>
+    <div class="stat-card stat-recent-games">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <div class="stat-number">{{ recent_games }}</div>
+                <div class="stat-label">Jeux (7j)</div>
+            </div>
+            <div class="stat-icon">
+                <i class="fas fa-gamepad"></i>
             </div>
         </div>
     </div>
@@ -537,6 +513,12 @@
 {% block extra_css %}
 <style>
   /* Grille moderne et cartes compactes */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 0.85rem;
+  }
+
   .stat-card {
     background: var(--card-bg, linear-gradient(135deg, #43a047 0%, #66bb6a 100%));
     color: #fff;
@@ -581,9 +563,6 @@
     font-size: 28px; /* réduit */
     opacity: .9;
   }
-
-  /* Espacements de la grille */
-  .g-3 { gap: 0.75rem !important; }
 
   /* Ajustements responsives subtils */
   @media (min-width: 1400px) {

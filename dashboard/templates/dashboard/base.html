@@ -19,17 +19,32 @@
             --accent-color: #66BB6A;
             --dark-color: #1B5E20;
             --light-color: #E8F5E8;
+            --sidebar-width: 260px;
         }
         
         body {
             background-color: #f8f9fa;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .dashboard-shell {
+            display: flex;
+            min-height: 100vh;
+            width: 100%;
+            overflow: hidden;
         }
         
         .sidebar {
             background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
             min-height: 100vh;
+            width: var(--sidebar-width);
             box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, margin-left 0.3s ease;
+            position: relative;
+            z-index: 1040;
         }
         
         .sidebar .nav-link {
@@ -54,6 +69,31 @@
         
         .main-content {
             padding: 30px;
+            flex: 1;
+            transition: padding 0.3s ease;
+            width: 100%;
+        }
+        
+        .main-toolbar {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        
+        .sidebar-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        body.sidebar-collapsed .sidebar {
+            margin-left: calc(-1 * var(--sidebar-width));
+        }
+        
+        body.sidebar-collapsed .main-content {
+            padding-left: clamp(16px, 4vw, 40px);
         }
         
         .card {
@@ -172,134 +212,201 @@
             margin: 5px 0 0 0;
             opacity: 0.9;
         }
+        
+        @media (max-width: 991.98px) {
+            .dashboard-shell {
+                flex-direction: column;
+            }
+            .sidebar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                height: 100%;
+                width: min(80vw, var(--sidebar-width));
+                transform: translateX(0);
+            }
+            body.sidebar-collapsed .sidebar {
+                transform: translateX(-100%);
+            }
+            body.sidebar-collapsed .main-content {
+                padding-top: 70px;
+            }
+        }
+        
+        @media (max-width: 575.98px) {
+            .main-content {
+                padding: 20px 16px 40px;
+            }
+            .page-header {
+                padding: 20px;
+            }
+        }
     </style>
     
     {% block extra_css %}{% endblock %}
 </head>
 <body>
-    <div class="container-fluid">
-        <div class="row">
-            <!-- Sidebar -->
-            <nav class="col-md-3 col-lg-2 d-md-block sidebar">
-                <div class="position-sticky pt-3">
-                    <div class="text-center mb-4">
-                        <h4 class="navbar-brand">
-                            <i class="fas fa-qrcode"></i> Aya Dashboard
-                        </h4>
-                    </div>
-                    
-                    <ul class="nav flex-column">
-                        <li class="nav-item">
-                            <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" 
-                               href="{% url 'dashboard:home' %}">
-                                <i class="fas fa-home"></i> Accueil
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {% if request.resolver_match.url_name == 'qr_codes' %}active{% endif %}" 
-                               href="{% url 'dashboard:qr_codes' %}">
-                                <i class="fas fa-qrcode"></i> QR Codes
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {% if request.resolver_match.url_name == 'users' %}active{% endif %}" 
-                               href="{% url 'dashboard:users' %}">
-                                <i class="fas fa-users"></i> Utilisateurs
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {% if request.resolver_match.url_name == 'analytics' %}active{% endif %}" 
-                               href="{% url 'dashboard:analytics' %}">
-                                <i class="fas fa-chart-line"></i> Analytics
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {% if request.resolver_match.url_name == 'exchanges' %}active{% endif %}" 
-                               href="{% url 'dashboard:exchanges' %}">
-                                <i class="fas fa-exchange-alt"></i> Échanges
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {% if request.resolver_match.url_name == 'vendors' %}active{% endif %}" 
-                               href="{% url 'dashboard:vendors' %}">
-                                <i class="fas fa-store"></i> Vendeurs
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {% if request.resolver_match.url_name == 'games' %}active{% endif %}" 
-                               href="{% url 'dashboard:games' %}">
-                                <i class="fas fa-gamepad"></i> Jeux
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {% if request.resolver_match.url_name == 'advertisements' %}active{% endif %}" 
-                               href="{% url 'dashboard:advertisements' %}">
-                                <i class="fas fa-video"></i> Publicités Vidéo
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {% if request.resolver_match.url_name == 'home_banner' %}active{% endif %}" 
-                               href="{% url 'dashboard:home_banner' %}">
-                                <i class="fas fa-image"></i> Bannière Accueil
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {% if request.resolver_match.url_name == 'exchange_tokens' %}active{% endif %}" 
-                               href="{% url 'dashboard:exchange_tokens' %}">
-                                <i class="fas fa-key"></i> Tokens d'Échange
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {% if request.resolver_match.url_name == 'qr_codes_analytics' %}active{% endif %}" 
-                               href="{% url 'dashboard:qr_codes_analytics' %}">
-                                <i class="fas fa-chart-line"></i> Analytics QR
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {% if request.resolver_match.url_name == 'system_health' %}active{% endif %}" 
-                               href="{% url 'dashboard:system_health' %}">
-                                <i class="fas fa-heartbeat"></i> Santé Système
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {% if request.resolver_match.url_name == 'bulk_operations' %}active{% endif %}" 
-                               href="{% url 'dashboard:bulk_operations' %}">
-                                <i class="fas fa-tools"></i> Opérations en Lot
-                            </a>
-                        </li>
-                        <li class="nav-item mt-4">
-                            <a class="nav-link" href="/admin/">
-                                <i class="fas fa-cog"></i> Admin Django
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'admin:logout' %}">
-                                <i class="fas fa-sign-out-alt"></i> Déconnexion
-                            </a>
-                        </li>
-                    </ul>
+    <div class="dashboard-shell">
+        <!-- Sidebar -->
+        <nav id="sidebarNav" class="sidebar">
+            <div class="position-sticky pt-3">
+                <div class="text-center mb-4">
+                    <h4 class="navbar-brand">
+                        <i class="fas fa-qrcode"></i> Aya Dashboard
+                    </h4>
                 </div>
-            </nav>
-            
-            <!-- Main content -->
-            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 main-content">
-                <!-- Messages -->
-                {% if messages %}
-                    {% for message in messages %}
-                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                            {{ message }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        </div>
-                    {% endfor %}
-                {% endif %}
                 
-                {% block content %}{% endblock %}
-            </main>
-        </div>
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" 
+                           href="{% url 'dashboard:home' %}">
+                            <i class="fas fa-home"></i> Accueil
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'qr_codes' %}active{% endif %}" 
+                           href="{% url 'dashboard:qr_codes' %}">
+                            <i class="fas fa-qrcode"></i> QR Codes
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'users' %}active{% endif %}" 
+                           href="{% url 'dashboard:users' %}">
+                            <i class="fas fa-users"></i> Utilisateurs
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'analytics' %}active{% endif %}" 
+                           href="{% url 'dashboard:analytics' %}">
+                            <i class="fas fa-chart-line"></i> Analytics
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'exchanges' %}active{% endif %}" 
+                           href="{% url 'dashboard:exchanges' %}">
+                            <i class="fas fa-exchange-alt"></i> Échanges
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'vendors' %}active{% endif %}" 
+                           href="{% url 'dashboard:vendors' %}">
+                            <i class="fas fa-store"></i> Vendeurs
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'games' %}active{% endif %}" 
+                           href="{% url 'dashboard:games' %}">
+                            <i class="fas fa-gamepad"></i> Jeux
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'advertisements' %}active{% endif %}" 
+                           href="{% url 'dashboard:advertisements' %}">
+                            <i class="fas fa-video"></i> Publicités Vidéo
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'home_banner' %}active{% endif %}" 
+                           href="{% url 'dashboard:home_banner' %}">
+                            <i class="fas fa-image"></i> Bannière Accueil
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'exchange_tokens' %}active{% endif %}" 
+                           href="{% url 'dashboard:exchange_tokens' %}">
+                            <i class="fas fa-key"></i> Tokens d'Échange
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'qr_codes_analytics' %}active{% endif %}" 
+                           href="{% url 'dashboard:qr_codes_analytics' %}">
+                            <i class="fas fa-chart-line"></i> Analytics QR
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'system_health' %}active{% endif %}" 
+                           href="{% url 'dashboard:system_health' %}">
+                            <i class="fas fa-heartbeat"></i> Santé Système
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'bulk_operations' %}active{% endif %}" 
+                           href="{% url 'dashboard:bulk_operations' %}">
+                            <i class="fas fa-tools"></i> Opérations en Lot
+                        </a>
+                    </li>
+                    <li class="nav-item mt-4">
+                        <a class="nav-link" href="/admin/">
+                            <i class="fas fa-cog"></i> Admin Django
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'admin:logout' %}">
+                            <i class="fas fa-sign-out-alt"></i> Déconnexion
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+        
+        <!-- Main content -->
+        <main id="mainContent" class="main-content">
+            <div class="main-toolbar">
+                <button id="sidebarToggle" class="btn btn-outline-success btn-sm sidebar-toggle">
+                    <i class="fas fa-arrow-left"></i>
+                    <span class="btn-label">Masquer le menu</span>
+                </button>
+            </div>
+            <!-- Messages -->
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+            
+            {% block content %}{% endblock %}
+        </main>
     </div>
     
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const body = document.body;
+            const toggleButton = document.getElementById('sidebarToggle');
+            const toggleLabel = toggleButton?.querySelector('.btn-label');
+            const toggleIcon = toggleButton?.querySelector('i');
+            const storedPreference = localStorage.getItem('ayaSidebarCollapsed');
+            
+            const setCollapsedState = (collapsed) => {
+                if (collapsed) {
+                    body.classList.add('sidebar-collapsed');
+                } else {
+                    body.classList.remove('sidebar-collapsed');
+                }
+                if (toggleLabel) {
+                    toggleLabel.textContent = collapsed ? 'Afficher le menu' : 'Masquer le menu';
+                }
+                if (toggleIcon) {
+                    toggleIcon.classList.toggle('fa-arrow-right', collapsed);
+                    toggleIcon.classList.toggle('fa-arrow-left', !collapsed);
+                }
+            };
+            
+            if (storedPreference === 'true') {
+                setCollapsedState(true);
+            }
+            
+            toggleButton?.addEventListener('click', () => {
+                const collapsed = !body.classList.contains('sidebar-collapsed');
+                setCollapsedState(collapsed);
+                localStorage.setItem('ayaSidebarCollapsed', collapsed);
+            });
+        });
+    </script>
     
     {% block extra_js %}{% endblock %}
 </body>

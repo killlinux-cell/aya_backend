@@ -1,4 +1,28 @@
-SECRET_KEY=your-secret-key-here-change-in-production
-DEBUG=True
-ALLOWED_HOSTS=localhost,127.0.0.1,10.0.2.2
+# ⚠️ IMPORTANT : Renommez ce fichier en .env et remplissez les valeurs réelles
+# Ne commitez JAMAIS le fichier .env avec des secrets !
+
+# 🔒 Sécurité (OBLIGATOIRE)
+SECRET_KEY=your-secret-key-here-change-in-production-generate-a-long-random-string
+DEBUG=False
+ALLOWED_HOSTS=aya-plus.orapide.shop,199.231.191.234
+
+# 🗄️ Base de données
+# Pour SQLite (développement)
 DATABASE_URL=sqlite:///db.sqlite3
+# Pour PostgreSQL (production recommandé)
+# DATABASE_URL=postgresql://user:password@localhost:5432/aya_db
+
+# 📧 Configuration Email (Production)
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USE_TLS=True
+EMAIL_HOST_USER=your-email@gmail.com
+EMAIL_HOST_PASSWORD=your-app-password-here
+DEFAULT_FROM_EMAIL=your-email@gmail.com
+
+# 🌐 CORS (ajoutez vos domaines)
+# CORS_ALLOWED_ORIGINS=https://aya-plus.orapide.shop,https://your-flutter-app.com
+
+# 📁 Chemins (optionnel, valeurs par défaut utilisées si non défini)
+# STATIC_ROOT=/var/www/aya_backend/static/
+# MEDIA_ROOT=/var/www/aya_backend/media/
