@@ -27,7 +27,7 @@ SECRET_KEY = config('SECRET_KEY', default='django-insecure-(xiy56oj+q9vlkvn0m-2a
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=True, cast=bool)  # True pour développement local
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,10.0.2.2,192.168.0.109,192.168.1.57,192.168.56.1,0.0.0.0,aya-plus.orapide.shop,199.231.191.234,*').split(',')
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='monuniversaya.com,www.monuniversaya.com,216.158.228.93,*').split(',')
 
 
 # Application definition
