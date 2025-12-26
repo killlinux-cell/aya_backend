@@ -209,9 +209,8 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:8080",
     "http://127.0.0.1:8080",
     "http://10.0.2.2:8000",  # Android emulator
-    "https://aya-plus.orapide.shop",
-    "http://199.231.191.234",
-    "https://199.231.191.234",
+    "https://monuniversaya.com",
+    "https://www.monuniversaya.com",
 ]
 
 CORS_ALLOW_CREDENTIALS = True

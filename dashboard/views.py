@@ -508,7 +508,7 @@ def generate_qr_code_image(request, qr_code_id):
     )
     
     # URL à encoder dans le QR code
-    qr_url = f"https://aya-plus.orapide.shop/scan?code={qr_code.code}"
+    qr_url = f"https://monuniversaya.com/scan?code={qr_code.code}"
     qr.add_data(qr_url)
     qr.make(fit=True)
     
@@ -546,7 +546,7 @@ def download_qr_code(request, qr_code_id):
     )
     
     # URL à encoder dans le QR code
-    qr_url = f"https://aya-plus.orapide.shop/scan?code={qr_code.code}"
+    qr_url = f"https://monuniversaya.com/scan?code={qr_code.code}"
     qr.add_data(qr_url)
     qr.make(fit=True)
     

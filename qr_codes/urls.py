@@ -13,7 +13,7 @@ def api_root(request):
             'exchanges': '/api/exchanges/',
             'stats': '/api/stats/',
         },
-        'documentation': 'https://aya-plus.orapide.shop'
+        'documentation': 'https://monuniversaya.com'
     })
 
 urlpatterns = [

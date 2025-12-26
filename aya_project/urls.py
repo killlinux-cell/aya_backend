@@ -25,8 +25,13 @@ def home_view(request):
     """Page d'accueil avec interface utilisateur"""
     return render(request, 'home.html')
 
+def scan_landing_view(request):
+    """Landing page pour les QR codes scannés - redirige vers les stores si l'app n'est pas installée"""
+    return render(request, 'landing_page/index.html')
+
 urlpatterns = [
     path('', home_view, name='home'),
+    path('scan', scan_landing_view, name='scan_landing'),  # Landing page pour QR codes
     path('admin/', admin.site.urls),
     path('api/auth/', include('authentication.urls')),
     path('api/vendor/', include('authentication.vendor_urls')),  # URLs spécifiques aux vendeurs
