@@ -29,9 +29,18 @@ def scan_landing_view(request):
     """Landing page pour les QR codes scannés - redirige vers les stores si l'app n'est pas installée"""
     return render(request, 'landing_page/index.html')
 
+def privacy_policy_view(request):
+    """Page de politique de confidentialité"""
+    from django.utils import timezone
+    context = {
+        'current_date': timezone.now(),
+    }
+    return render(request, 'privacy_policy.html', context)
+
 urlpatterns = [
     path('', home_view, name='home'),
     path('scan', scan_landing_view, name='scan_landing'),  # Landing page pour QR codes
+    path('privacy', privacy_policy_view, name='privacy_policy'),  # Politique de confidentialité
     path('admin/', admin.site.urls),
     path('api/auth/', include('authentication.urls')),
     path('api/vendor/', include('authentication.vendor_urls')),  # URLs spécifiques aux vendeurs
