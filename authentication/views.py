@@ -224,6 +224,89 @@ def logout_view(request):
         }, status=status.HTTP_400_BAD_REQUEST)
 
 
+@api_view(['DELETE'])
+@permission_classes([permissions.IsAuthenticated])
+def delete_account(request):
+    """
+    Supprime définitivement le compte utilisateur et toutes ses données.
+    Cette action est irréversible.
+    """
+    user = request.user
+    
+    try:
+        # Importer tous les modèles nécessaires
+        from qr_codes.models import (
+            UserQRCode, GameHistory, ExchangeRequest, 
+            DailyGameLimit, ExchangeToken
+        )
+        from .models_grand_prix import GrandPrixParticipation
+        
+        # Compter les données avant suppression (pour logging)
+        qr_codes_count = UserQRCode.objects.filter(user=user).count()
+        games_count = GameHistory.objects.filter(user=user).count()
+        exchanges_count = ExchangeRequest.objects.filter(user=user).count()
+        tokens_count = ExchangeToken.objects.filter(user=user).count()
+        participations_count = GrandPrixParticipation.objects.filter(user=user).count()
+        daily_limits_count = DailyGameLimit.objects.filter(user=user).count()
+        
+        # Supprimer toutes les données associées explicitement
+        # (même si CASCADE le ferait automatiquement, on le fait pour le logging)
+        
+        # 1. QR codes scannés
+        UserQRCode.objects.filter(user=user).delete()
+        
+        # 2. Historique des jeux
+        GameHistory.objects.filter(user=user).delete()
+        
+        # 3. Demandes d'échange
+        ExchangeRequest.objects.filter(user=user).delete()
+        
+        # 4. Tokens d'échange
+        ExchangeToken.objects.filter(user=user).delete()
+        
+        # 5. Limites quotidiennes de jeux
+        DailyGameLimit.objects.filter(user=user).delete()
+        
+        # 6. Participations aux grands prix
+        GrandPrixParticipation.objects.filter(user=user).delete()
+        
+        # 7. Profil utilisateur (OneToOne, sera supprimé automatiquement avec CASCADE)
+        # Mais on peut le faire explicitement
+        if hasattr(user, 'profile'):
+            user.profile.delete()
+        
+        # 8. Tokens de réinitialisation de mot de passe
+        PasswordResetToken.objects.filter(user=user).delete()
+        
+        # 9. Vérifier si l'utilisateur est un vendeur et supprimer le profil vendeur
+        if hasattr(user, 'vendor_profile'):
+            user.vendor_profile.delete()
+        
+        # 10. Blacklister tous les tokens JWT de l'utilisateur
+        # (On ne peut pas blacklister tous les tokens, mais on supprime le compte)
+        
+        # 11. Supprimer le compte utilisateur lui-même
+        user.delete()
+        
+        return Response({
+            'message': 'Compte supprimé avec succès',
+            'deleted_data': {
+                'qr_codes': qr_codes_count,
+                'games': games_count,
+                'exchanges': exchanges_count,
+                'tokens': tokens_count,
+                'grand_prix_participations': participations_count,
+                'daily_limits': daily_limits_count,
+            }
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response({
+            'error': 'Erreur lors de la suppression du compte',
+            'details': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
 class VendorLoginView(APIView):
     """
     Vue pour la connexion des vendeurs

@@ -21,6 +21,9 @@ urlpatterns = [
     path('password/reset/request/', views.PasswordResetRequestView.as_view(), name='password_reset_request'),
     path('password/reset/confirm/', views.PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
     
+    # Suppression de compte
+    path('delete-account/', views.delete_account, name='delete_account'),
+    
     # Grand Prix
     path('grand-prix/current/', grand_prix_views.get_current_grand_prix, name='get_current_grand_prix'),
     path('grand-prix/participate/', grand_prix_views.participate_in_grand_prix, name='participate_in_grand_prix'),
