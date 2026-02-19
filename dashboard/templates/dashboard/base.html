@@ -341,9 +341,13 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'logout' %}">
-                            <i class="fas fa-sign-out-alt"></i> Déconnexion
-                        </a>
+                        <form method="post" action="{% url 'logout' %}" class="m-0 p-0">
+                            {% csrf_token %}
+                            <button type="submit" class="nav-link btn btn-link p-0 m-0"
+                                    style="width: 100%; text-align: left; background: none; border: 0; text-decoration: none;">
+                                <i class="fas fa-sign-out-alt"></i> Déconnexion
+                            </button>
+                        </form>
                     </li>
                 </ul>
             </div>

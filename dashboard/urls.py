@@ -32,6 +32,7 @@ urlpatterns = [
     
     # Analytics
     path('analytics/', views.analytics, name='analytics'),
+    path('analytics/export/', views.export_analytics_csv, name='export_analytics'),
     
     # Demandes d'échange
     path('exchanges/', views.exchange_requests, name='exchanges'),

@@ -326,67 +326,84 @@ def export_users_csv(request):
 @login_required
 @user_passes_test(is_admin)
 def analytics(request):
-    """Page d'analytics avec graphiques avancés"""
+    """Page d'analytics avec graphiques avancés + filtres/export."""
     
-    # Données pour les graphiques
+    # Filtres de date
     today = timezone.now().date()
-    week_ago = today - timedelta(days=7)
-    month_ago = today - timedelta(days=30)
+    default_start = today - timedelta(days=7)
     
-    # Scans par jour (7 derniers jours)
+    date_from_str = request.GET.get('date_from')
+    date_to_str = request.GET.get('date_to')
+    
+    try:
+        date_from = datetime.strptime(date_from_str, '%Y-%m-%d').date() if date_from_str else default_start
+    except ValueError:
+        date_from = default_start
+    
+    try:
+        date_to = datetime.strptime(date_to_str, '%Y-%m-%d').date() if date_to_str else today
+    except ValueError:
+        date_to = today
+    
+    if date_to < date_from:
+        date_from, date_to = date_to, date_from
+    
+    days_range = (date_to - date_from).days + 1
+    
+    # Scans par jour
     daily_scans = []
-    for i in range(7):
-        date = week_ago + timedelta(days=i)
+    for i in range(days_range):
+        current_date = date_from + timedelta(days=i)
         count = UserQRCode.objects.filter(
-            scanned_at__date=date
+            scanned_at__date=current_date
         ).count()
         daily_scans.append({
-            'date': date.strftime('%d/%m'),
+            'date': current_date.strftime('%d/%m'),
             'count': count
         })
     
     # Points distribués par jour
     daily_points = []
-    for i in range(7):
-        date = week_ago + timedelta(days=i)
+    for i in range(days_range):
+        current_date = date_from + timedelta(days=i)
         points = UserQRCode.objects.filter(
-            scanned_at__date=date
+            scanned_at__date=current_date
         ).aggregate(total=Sum('points_earned'))['total'] or 0
         daily_points.append({
-            'date': date.strftime('%d/%m'),
+            'date': current_date.strftime('%d/%m'),
             'points': points
         })
     
-    # Jeux par jour (7 derniers jours)
+    # Jeux par jour
     daily_games = []
-    for i in range(7):
-        date = week_ago + timedelta(days=i)
+    for i in range(days_range):
+        current_date = date_from + timedelta(days=i)
         spin_wheel_count = GameHistory.objects.filter(
             game_type='spin_wheel',
-            played_at__date=date
+            played_at__date=current_date
         ).count()
         scratch_count = GameHistory.objects.filter(
             game_type='scratch_and_win',
-            played_at__date=date
+            played_at__date=current_date
         ).count()
         daily_games.append({
-            'date': date.strftime('%d/%m'),
+            'date': current_date.strftime('%d/%m'),
             'spin_wheel': spin_wheel_count,
             'scratch_and_win': scratch_count,
         })
     
     # Tokens d'échange par jour
     daily_tokens = []
-    for i in range(7):
-        date = week_ago + timedelta(days=i)
+    for i in range(days_range):
+        current_date = date_from + timedelta(days=i)
         created_count = ExchangeToken.objects.filter(
-            created_at__date=date
+            created_at__date=current_date
         ).count()
         used_count = ExchangeToken.objects.filter(
-            used_at__date=date
+            used_at__date=current_date
         ).count()
         daily_tokens.append({
-            'date': date.strftime('%d/%m'),
+            'date': current_date.strftime('%d/%m'),
             'created': created_count,
             'used': used_count,
         })
@@ -438,9 +455,87 @@ def analytics(request):
         'used_tokens': used_tokens,
         'expired_tokens': expired_tokens,
         'conversion_rate': round(conversion_rate, 1),
+        'date_from': date_from.strftime('%Y-%m-%d'),
+        'date_to': date_to.strftime('%Y-%m-%d'),
     }
     
     return render(request, 'dashboard/analytics.html', context)
+
+
+@login_required
+@user_passes_test(is_admin)
+def export_analytics_csv(request):
+    """Exporter les données Analytics au format CSV (Excel compatible)."""
+    today = timezone.now().date()
+    default_start = today - timedelta(days=7)
+    
+    date_from_str = request.GET.get('date_from')
+    date_to_str = request.GET.get('date_to')
+    
+    try:
+        date_from = datetime.strptime(date_from_str, '%Y-%m-%d').date() if date_from_str else default_start
+    except ValueError:
+        date_from = default_start
+    
+    try:
+        date_to = datetime.strptime(date_to_str, '%Y-%m-%d').date() if date_to_str else today
+    except ValueError:
+        date_to = today
+    
+    if date_to < date_from:
+        date_from, date_to = date_to, date_from
+    
+    filename = f"analytics_{date_from.strftime('%Y%m%d')}_{date_to.strftime('%Y%m%d')}.csv"
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    
+    writer = csv.writer(response)
+    writer.writerow([
+        'Date',
+        'Nombre de scans',
+        'Points distribués',
+        'Jeux Spin Wheel',
+        'Jeux Scratch & Win',
+        'Tokens créés',
+        'Tokens utilisés',
+    ])
+    
+    days_range = (date_to - date_from).days + 1
+    for i in range(days_range):
+        current_date = date_from + timedelta(days=i)
+        
+        scans_count = UserQRCode.objects.filter(
+            scanned_at__date=current_date
+        ).count()
+        points_total = UserQRCode.objects.filter(
+            scanned_at__date=current_date
+        ).aggregate(total=Sum('points_earned'))['total'] or 0
+        spin_wheel_count = GameHistory.objects.filter(
+            game_type='spin_wheel',
+            played_at__date=current_date
+        ).count()
+        scratch_count = GameHistory.objects.filter(
+            game_type='scratch_and_win',
+            played_at__date=current_date
+        ).count()
+        tokens_created = ExchangeToken.objects.filter(
+            created_at__date=current_date
+        ).count()
+        tokens_used = ExchangeToken.objects.filter(
+            used_at__date=current_date
+        ).count()
+        
+        writer.writerow([
+            current_date.strftime('%Y-%m-%d'),
+            scans_count,
+            points_total,
+            spin_wheel_count,
+            scratch_count,
+            tokens_created,
+            tokens_used,
+        ])
+    
+    return response
 
 @login_required
 @user_passes_test(is_admin)
