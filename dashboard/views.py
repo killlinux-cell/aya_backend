@@ -814,6 +814,34 @@ def generate_batch_qr_codes(request):
                 special_type = request.POST.get('special_type', 'loyalty_bonus')
                 actual_prize_type = special_type
                 points_value = 0  # Les spéciaux n'ont pas de points
+                
+                # Si c'est une Mystery Box, récupérer les lots sélectionnés
+                mystery_box_lots = {}
+                if special_type == 'mystery_box':
+                    mystery_box_lot_ids = [
+                        'margarine_250g', 'huile_0_45L', 'bonus_50pts', 'huile_0_9L',
+                        'huile_3L', 'box_aya_mix', 'carton_0_9L_12', '2x5L',
+                        'carton_5L_4', 'electromenager'
+                    ]
+                    for lot_id in mystery_box_lot_ids:
+                        quantity = request.POST.get(f'mystery_box_lot_{lot_id}')
+                        if quantity and int(quantity) > 0:
+                            lot_name_map = {
+                                'margarine_250g': 'Margarine 250g',
+                                'huile_0_45L': 'Huile 0,45L',
+                                'bonus_50pts': 'Bonus 50 pts',
+                                'huile_0_9L': 'Huile 0,9L',
+                                'huile_3L': 'Huile 3L',
+                                'box_aya_mix': 'Box Aya mix',
+                                'carton_0_9L_12': 'Carton 0,9L (12)',
+                                '2x5L': '2×5L',
+                                'carton_5L_4': 'Carton 5L (4)',
+                                'electromenager': 'Électroménager'
+                            }
+                            mystery_box_lots[lot_id] = {
+                                'name': lot_name_map.get(lot_id, lot_id),
+                                'quantity': int(quantity)
+                            }
             elif prize_type == 'try_again':
                 actual_prize_type = 'try_again'
                 points_value = 0  # Try again n'a pas de points
@@ -837,15 +865,36 @@ def generate_batch_qr_codes(request):
             generated_codes = []
             sequence = 1
             
+            # Si Mystery Box, préparer la distribution des lots
+            mystery_box_distribution = []
+            if actual_prize_type == 'mystery_box' and mystery_box_lots:
+                import random
+                # Créer une liste avec les lots selon leurs quantités
+                for lot_id, lot_data in mystery_box_lots.items():
+                    for _ in range(lot_data['quantity']):
+                        mystery_box_distribution.append(lot_data['name'])
+                # Mélanger pour distribution aléatoire
+                random.shuffle(mystery_box_distribution)
+                print(f"📦 Distribution Mystery Box : {len(mystery_box_distribution)} lots préparés")
+            
             # Générer tous les QR codes avec la même configuration
             print(f"📦 Génération de {total_codes} QR codes {type_description}...")
             
             for i in range(total_codes):
                 code = f"{batch_number}{sequence:05d}"
+                
+                # Si Mystery Box, assigner un lot aléatoire
+                description = f"Lot {batch_number} - {type_description} - {category} - QR #{sequence}"
+                if actual_prize_type == 'mystery_box' and mystery_box_distribution:
+                    # Utiliser modulo pour distribuer de manière cyclique si pas assez de lots
+                    lot_index = (i % len(mystery_box_distribution)) if mystery_box_distribution else 0
+                    assigned_lot = mystery_box_distribution[lot_index] if lot_index < len(mystery_box_distribution) else "Lot surprise"
+                    description = f"Lot {batch_number} - Mystery Box ({assigned_lot}) - {category} - QR #{sequence}"
+                
                 qr_code = QRCode.objects.create(
                     code=code,
                     points=points_value,
-                    description=f"Lot {batch_number} - {type_description} - {category} - QR #{sequence}",
+                    description=description,
                     prize_type=actual_prize_type,
                     category=category,
                     is_active=True,
@@ -999,55 +1048,71 @@ def open_mystery_box(request):
                 'error': 'QR code Mystery Box non trouvé ou déjà utilisé'
             }, status=404)
         
-        # Générer un prix aléatoire pour la Mystery Box
-        import random
+        qr_code_obj = user_qr_code.qr_code
+        description = qr_code_obj.description or ''
         
-        # Probabilités des prix (ajustables selon vos besoins)
-        prize_types = [
-            ('points', 0.4),      # 40% - Points
-            ('special_prize', 0.1), # 10% - Prix spécial
-            ('bonus_game', 0.2),   # 20% - Jeu bonus
-            ('loyalty_bonus', 0.2), # 20% - Bonus fidélité
-            ('try_again', 0.1),    # 10% - Réessayer
-        ]
-        
-        # Sélectionner le type de prix
-        rand = random.random()
-        cumulative = 0
-        selected_prize_type = 'points'
-        
-        for prize_type, probability in prize_types:
-            cumulative += probability
-            if rand <= cumulative:
-                selected_prize_type = prize_type
-                break
-        
-        # Déterminer la valeur du prix
+        # Extraire le lot depuis la description (format: "Lot X - Mystery Box (Nom du lot) - ...")
+        import re
         prize_value = 0
         prize_description = ''
+        selected_prize_type = 'physical_prize'
         is_special_prize = False
         
-        if selected_prize_type == 'points':
-            prize_value = random.choice([20, 30, 50, 75, 100])
-            prize_description = f'{prize_value} points'
-        elif selected_prize_type == 'special_prize':
-            special_prizes = [
-                ('500 points', 500),
-                ('Jeu gratuit illimité', 0),
-                ('Bonus fidélité x3', 0),
+        match = re.search(r'Mystery Box\s*\(([^)]+)\)', description)
+        if match:
+            # Lot configuré par l'admin (Margarine 250g, Huile 0,45L, etc.)
+            assigned_lot = match.group(1).strip()
+            prize_description = assigned_lot
+            
+            # Bonus 50 pts : créditer les points
+            if 'Bonus 50 pts' in assigned_lot or 'Bonus 50 points' in assigned_lot:
+                prize_value = 50
+                selected_prize_type = 'points'
+                prize_description = '50 points'
+            # Lots physiques (Margarine, Huile, Box Aya, etc.)
+            elif any(x in assigned_lot for x in ['Électroménager', 'Carton 5L', '2×5L', 'Box Aya']):
+                is_special_prize = True
+            else:
+                selected_prize_type = 'physical_prize'
+        else:
+            # Fallback : ancien système aléatoire (pour QR codes générés avant la nouvelle config)
+            import random
+            prize_types = [
+                ('points', 0.4),
+                ('special_prize', 0.1),
+                ('bonus_game', 0.2),
+                ('loyalty_bonus', 0.2),
+                ('try_again', 0.1),
             ]
-            prize_desc, prize_value = random.choice(special_prizes)
-            prize_description = prize_desc
-            is_special_prize = True
-        elif selected_prize_type == 'bonus_game':
-            prize_description = 'Jeu bonus gratuit'
-            prize_value = 0
-        elif selected_prize_type == 'loyalty_bonus':
-            prize_description = 'QR code Bonus Fidélité'
-            prize_value = 0
-        elif selected_prize_type == 'try_again':
-            prize_description = 'Réessayer plus tard'
-            prize_value = 0
+            rand = random.random()
+            cumulative = 0
+            for prize_type, probability in prize_types:
+                cumulative += probability
+                if rand <= cumulative:
+                    selected_prize_type = prize_type
+                    break
+            
+            if selected_prize_type == 'points':
+                prize_value = random.choice([20, 30, 50, 75, 100])
+                prize_description = f'{prize_value} points'
+            elif selected_prize_type == 'special_prize':
+                special_prizes = [
+                    ('500 points', 500),
+                    ('Jeu gratuit illimité', 0),
+                    ('Bonus fidélité x3', 0),
+                ]
+                prize_desc, prize_value = random.choice(special_prizes)
+                prize_description = prize_desc
+                is_special_prize = True
+            elif selected_prize_type == 'bonus_game':
+                prize_description = 'Jeu bonus gratuit'
+                prize_value = 0
+            elif selected_prize_type == 'loyalty_bonus':
+                prize_description = 'QR code Bonus Fidélité'
+                prize_value = 0
+            elif selected_prize_type == 'try_again':
+                prize_description = 'Réessayer plus tard'
+                prize_value = 0
         
         # Créer l'historique de la Mystery Box
         from .models import MysteryBoxHistory

@@ -73,6 +73,42 @@
         padding: 1rem;
         margin-bottom: 1rem;
     }
+    
+    #mystery_box_lots_section {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 1.5rem;
+        border: 2px solid #ffc107;
+    }
+    
+    #mystery_box_lots_section .table {
+        margin-bottom: 0;
+    }
+    
+    #mystery_box_lots_section .table thead th {
+        background-color: #ffc107;
+        color: #000;
+        font-weight: 600;
+        border: 1px solid #ffc107;
+    }
+    
+    #mystery_box_lots_section .table tbody tr:hover {
+        background-color: #fff3cd;
+    }
+    
+    #mystery_box_lots_section .lot-quantity:disabled {
+        background-color: #e9ecef;
+        cursor: not-allowed;
+    }
+    
+    #mystery_box_lots_section .lot-total-cost {
+        font-weight: 600;
+        color: #28a745;
+    }
+    
+    #mystery_box_lots_section tfoot {
+        font-weight: 600;
+    }
 </style>
 {% endblock %}
 
@@ -253,6 +289,40 @@
                                     <option value="mystery_box">Mystery Box (Surprise)</option>
                                     <option value="scratch_win">Scratch & Win</option>
                                 </select>
+                                
+                                <!-- Section de sélection des lots Mystery Box -->
+                                <div id="mystery_box_lots_section" class="mt-4" style="display:none;">
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle"></i> <strong>Sélectionnez les lots à inclure dans la Mystery Box :</strong>
+                                        <p class="mb-0 small mt-2">Choisissez les types de lots et leurs quantités. Le total des gagnants sera utilisé pour générer les QR codes Mystery Box.</p>
+                                    </div>
+                                    
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered table-hover">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th style="width: 40px;">
+                                                        <input type="checkbox" id="select_all_lots" title="Sélectionner tout">
+                                                    </th>
+                                                    <th>Type de lot</th>
+                                                    <th class="text-end">Coût unitaire (FCFA)</th>
+                                                    <th class="text-end">Quantité</th>
+                                                    <th class="text-end">Coût total (FCFA)</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="mystery_box_lots_table">
+                                                <!-- Les lots seront générés par JavaScript -->
+                                            </tbody>
+                                            <tfoot class="table-secondary">
+                                                <tr>
+                                                    <td colspan="3" class="text-end"><strong>Total :</strong></td>
+                                                    <td class="text-end"><strong id="total_winners">0</strong></td>
+                                                    <td class="text-end"><strong id="total_cost">0</strong> FCFA</td>
+                                                </tr>
+                                            </tfoot>
+                                        </table>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         
@@ -302,6 +372,14 @@
                         <div class="stats-item" id="summary_special_row" style="display:none;">
                             <span>Type Special</span>
                             <span class="type-badge" id="summary_special">-</span>
+                        </div>
+                        <div class="stats-item" id="summary_mystery_box_row" style="display:none;">
+                            <span>Total Gagnants MB</span>
+                            <span class="points-badge" id="summary_mystery_box_winners">0</span>
+                        </div>
+                        <div class="stats-item" id="summary_mystery_box_cost_row" style="display:none;">
+                            <span>Coût Total MB</span>
+                            <span class="type-badge" id="summary_mystery_box_cost">0 FCFA</span>
                         </div>
                     </div>
                     
@@ -430,11 +508,156 @@ function updateSummary() {
         document.getElementById('summary_special').textContent = specialLabels[specialType] || '-';
         document.getElementById('summary_points_row').style.display = 'none';
         document.getElementById('summary_special_row').style.display = 'flex';
+        
+        // Afficher les infos Mystery Box si applicable
+        if (specialType === 'mystery_box') {
+            const totalWinners = document.getElementById('total_winners')?.textContent || '0';
+            const totalCost = document.getElementById('total_cost')?.textContent || '0';
+            document.getElementById('summary_mystery_box_winners').textContent = totalWinners;
+            document.getElementById('summary_mystery_box_cost').textContent = totalCost + ' FCFA';
+            document.getElementById('summary_mystery_box_row').style.display = 'flex';
+            document.getElementById('summary_mystery_box_cost_row').style.display = 'flex';
+        } else {
+            document.getElementById('summary_mystery_box_row').style.display = 'none';
+            document.getElementById('summary_mystery_box_cost_row').style.display = 'none';
+        }
     } else {
         document.getElementById('summary_points_row').style.display = 'none';
         document.getElementById('summary_special_row').style.display = 'none';
     }
 }
+
+// Données des lots Mystery Box (du tableau fourni)
+const MYSTERY_BOX_LOTS = [
+    { id: 'margarine_250g', name: 'Margarine 250g', unitCost: 200, defaultWinners: 8945 },
+    { id: 'huile_0_45L', name: 'Huile 0,45L', unitCost: 300, defaultWinners: 10000 },
+    { id: 'bonus_50pts', name: 'Bonus 50 pts', unitCost: 0, defaultWinners: 0 },
+    { id: 'huile_0_9L', name: 'Huile 0,9L', unitCost: 600, defaultWinners: 2585 },
+    { id: 'huile_3L', name: 'Huile 3L', unitCost: 1800, defaultWinners: 1700 },
+    { id: 'box_aya_mix', name: 'Box Aya mix', unitCost: 3500, defaultWinners: 1200 },
+    { id: 'carton_0_9L_12', name: 'Carton 0,9L (12)', unitCost: 7000, defaultWinners: 300 },
+    { id: '2x5L', name: '2×5L', unitCost: 6000, defaultWinners: 200 },
+    { id: 'carton_5L_4', name: 'Carton 5L (4)', unitCost: 12000, defaultWinners: 50 },
+    { id: 'electromenager', name: 'Électroménager', unitCost: 25000, defaultWinners: 20 }
+];
+
+// Générer le tableau des lots Mystery Box
+function generateMysteryBoxLotsTable() {
+    const tbody = document.getElementById('mystery_box_lots_table');
+    tbody.innerHTML = '';
+    
+    MYSTERY_BOX_LOTS.forEach(lot => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>
+                <input type="checkbox" class="lot-checkbox" 
+                       data-lot-id="${lot.id}" 
+                       id="checkbox_${lot.id}"
+                       onchange="updateMysteryBoxTotals()">
+            </td>
+            <td>
+                <label for="checkbox_${lot.id}" class="mb-0" style="cursor: pointer;">
+                    ${lot.name}
+                </label>
+            </td>
+            <td class="text-end">${lot.unitCost.toLocaleString('fr-FR')}</td>
+            <td class="text-end">
+                <input type="number" 
+                       class="form-control form-control-sm lot-quantity" 
+                       id="qty_${lot.id}"
+                       name="mystery_box_lot_${lot.id}"
+                       data-lot-id="${lot.id}"
+                       data-unit-cost="${lot.unitCost}"
+                       value="${lot.defaultWinners}"
+                       min="0"
+                       style="width: 120px; text-align: right;"
+                       onchange="updateMysteryBoxTotals()"
+                       disabled>
+            </td>
+            <td class="text-end">
+                <span id="cost_${lot.id}" class="lot-total-cost">0</span> FCFA
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+    
+    updateMysteryBoxTotals();
+}
+
+// Mettre à jour les totaux des lots Mystery Box
+function updateMysteryBoxTotals() {
+    let totalWinners = 0;
+    let totalCost = 0;
+    
+    MYSTERY_BOX_LOTS.forEach(lot => {
+        const checkbox = document.getElementById(`checkbox_${lot.id}`);
+        const quantityInput = document.getElementById(`qty_${lot.id}`);
+        const costSpan = document.getElementById(`cost_${lot.id}`);
+        
+        if (checkbox && checkbox.checked && quantityInput) {
+            const quantity = parseInt(quantityInput.value) || 0;
+            const cost = quantity * lot.unitCost;
+            
+            totalWinners += quantity;
+            totalCost += cost;
+            
+            if (costSpan) {
+                costSpan.textContent = cost.toLocaleString('fr-FR');
+            }
+        } else {
+            if (costSpan) {
+                costSpan.textContent = '0';
+            }
+        }
+    });
+    
+    document.getElementById('total_winners').textContent = totalWinners.toLocaleString('fr-FR');
+    document.getElementById('total_cost').textContent = totalCost.toLocaleString('fr-FR');
+    
+    // Mettre à jour le résumé
+    if (document.getElementById('summary_mystery_box_winners')) {
+        document.getElementById('summary_mystery_box_winners').textContent = totalWinners.toLocaleString('fr-FR');
+    }
+    if (document.getElementById('summary_mystery_box_cost')) {
+        document.getElementById('summary_mystery_box_cost').textContent = totalCost.toLocaleString('fr-FR') + ' FCFA';
+    }
+}
+
+// Gérer la sélection/désélection de tous les lots
+document.addEventListener('DOMContentLoaded', function() {
+    const selectAllCheckbox = document.getElementById('select_all_lots');
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function() {
+            const checkboxes = document.querySelectorAll('.lot-checkbox');
+            const quantityInputs = document.querySelectorAll('.lot-quantity');
+            
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = selectAllCheckbox.checked;
+            });
+            
+            quantityInputs.forEach(input => {
+                input.disabled = !selectAllCheckbox.checked;
+            });
+            
+            updateMysteryBoxTotals();
+        });
+    }
+    
+    // Activer/désactiver les inputs selon la checkbox
+    document.addEventListener('change', function(e) {
+        if (e.target.classList.contains('lot-checkbox')) {
+            const lotId = e.target.dataset.lotId;
+            const quantityInput = document.getElementById(`qty_${lotId}`);
+            if (quantityInput) {
+                quantityInput.disabled = !e.target.checked;
+                if (!e.target.checked) {
+                    quantityInput.value = '0';
+                }
+            }
+            updateMysteryBoxTotals();
+        }
+    });
+});
 
 // Affichage conditionnel selon le Type sélectionné
 function toggleTypeSections() {
@@ -443,10 +666,12 @@ function toggleTypeSections() {
     
     const pointsSection = document.getElementById('points_section');
     const specialSection = document.getElementById('special_section');
+    const mysteryBoxLotsSection = document.getElementById('mystery_box_lots_section');
     
     if (typeValue === 'points') {
         pointsSection.style.display = 'block';
         specialSection.style.display = 'none';
+        if (mysteryBoxLotsSection) mysteryBoxLotsSection.style.display = 'none';
         document.getElementById('points_value').required = true;
         document.getElementById('special_type').required = false;
     } else if (typeValue === 'special') {
@@ -454,11 +679,40 @@ function toggleTypeSections() {
         specialSection.style.display = 'block';
         document.getElementById('points_value').required = false;
         document.getElementById('special_type').required = true;
+        
+        // Vérifier si Mystery Box est sélectionné
+        const specialType = document.getElementById('special_type').value;
+        if (specialType === 'mystery_box' && mysteryBoxLotsSection) {
+            mysteryBoxLotsSection.style.display = 'block';
+            if (document.getElementById('mystery_box_lots_table').children.length === 0) {
+                generateMysteryBoxLotsTable();
+            }
+        } else if (mysteryBoxLotsSection) {
+            mysteryBoxLotsSection.style.display = 'none';
+        }
     } else { // try_again
         pointsSection.style.display = 'none';
         specialSection.style.display = 'none';
+        if (mysteryBoxLotsSection) mysteryBoxLotsSection.style.display = 'none';
         document.getElementById('points_value').required = false;
         document.getElementById('special_type').required = false;
+    }
+    
+    updateSummary();
+}
+
+// Gérer le changement du type de Special
+function handleSpecialTypeChange() {
+    const specialType = document.getElementById('special_type').value;
+    const mysteryBoxLotsSection = document.getElementById('mystery_box_lots_section');
+    
+    if (specialType === 'mystery_box' && mysteryBoxLotsSection) {
+        mysteryBoxLotsSection.style.display = 'block';
+        if (document.getElementById('mystery_box_lots_table').children.length === 0) {
+            generateMysteryBoxLotsTable();
+        }
+    } else if (mysteryBoxLotsSection) {
+        mysteryBoxLotsSection.style.display = 'none';
     }
     
     updateSummary();
@@ -476,12 +730,26 @@ document.querySelectorAll('input[name="category"]').forEach(radio => {
 document.getElementById('batch_number').addEventListener('input', updateSummary);
 document.getElementById('total_qr_codes').addEventListener('input', updateSummary);
 document.getElementById('points_value').addEventListener('input', updateSummary);
-document.getElementById('special_type').addEventListener('change', updateSummary);
+document.getElementById('special_type').addEventListener('change', function() {
+    handleSpecialTypeChange();
+    updateSummary();
+});
 
 // Initialisation
 toggleGenerationMode();
 toggleTypeSections();
 updateSummary();
+
+// Vérifier si Mystery Box est déjà sélectionné au chargement
+document.addEventListener('DOMContentLoaded', function() {
+    const specialType = document.getElementById('special_type');
+    if (specialType && specialType.value === 'mystery_box') {
+        const typeRadio = document.querySelector('input[name="prize_type"]:checked');
+        if (typeRadio && typeRadio.value === 'special') {
+            handleSpecialTypeChange();
+        }
+    }
+});
 
 document.getElementById('batchForm').addEventListener('submit', function(e) {
     const generateBtn = document.getElementById('generateBtn');
@@ -497,6 +765,42 @@ document.getElementById('batchForm').addEventListener('submit', function(e) {
         return;
     }
     
+    // Vérifier les lots Mystery Box si applicable
+    if (prizeType === 'special') {
+        const specialType = document.getElementById('special_type').value;
+        if (specialType === 'mystery_box') {
+            const checkedLots = document.querySelectorAll('.lot-checkbox:checked');
+            if (checkedLots.length === 0) {
+                alert('Veuillez sélectionner au moins un lot pour la Mystery Box !');
+                e.preventDefault();
+                return;
+            }
+            
+            let totalMysteryBoxWinners = 0;
+            checkedLots.forEach(checkbox => {
+                const lotId = checkbox.dataset.lotId;
+                const quantityInput = document.getElementById(`qty_${lotId}`);
+                if (quantityInput) {
+                    totalMysteryBoxWinners += parseInt(quantityInput.value) || 0;
+                }
+            });
+            
+            if (totalMysteryBoxWinners === 0) {
+                alert('Veuillez spécifier au moins une quantité pour les lots sélectionnés !');
+                e.preventDefault();
+                return;
+            }
+            
+            if (totalMysteryBoxWinners !== totalQR) {
+                const confirmMsg = `Attention : Le total des gagnants Mystery Box (${totalMysteryBoxWinners.toLocaleString('fr-FR')}) ne correspond pas au nombre de QR codes à générer (${totalQR.toLocaleString('fr-FR')}).\n\nVoulez-vous continuer quand même ?`;
+                if (!confirm(confirmMsg)) {
+                    e.preventDefault();
+                    return;
+                }
+            }
+        }
+    }
+    
     // Construire le message de confirmation
     let message = `Êtes-vous sûr de vouloir générer le lot ${batchNumber} ?\n\n`;
     message += `- Nombre de QR : ${totalQR.toLocaleString('fr-FR')}\n`;
@@ -509,6 +813,13 @@ document.getElementById('batchForm').addEventListener('submit', function(e) {
     } else if (prizeType === 'special') {
         const specialType = document.getElementById('special_type').value;
         message += `- Special : ${specialType}\n`;
+        
+        if (specialType === 'mystery_box') {
+            const totalWinners = document.getElementById('total_winners').textContent;
+            const totalCost = document.getElementById('total_cost').textContent;
+            message += `- Total gagnants Mystery Box : ${totalWinners}\n`;
+            message += `- Coût total : ${totalCost} FCFA\n`;
+        }
     }
     
     message += `\nCette opération peut prendre plusieurs minutes.`;
