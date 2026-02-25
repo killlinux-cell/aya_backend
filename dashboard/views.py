@@ -711,13 +711,13 @@ def generate_standard_scenario(request, batch_number):
     # Scénario standard selon vos spécifications
     batches_config = [
         # Points
-        {'type': 'points', 'points': 10, 'quantity': 25000, 'category': '1.5L', 'desc': '10 points'},
-        {'type': 'points', 'points': 50, 'quantity': 15000, 'category': '1.5L', 'desc': '50 points'},
+        {'type': 'points', 'points': 10, 'quantity': 25000, 'category': '0.5L', 'desc': '10 points'},
+        {'type': 'points', 'points': 50, 'quantity': 15000, 'category': '0.9L', 'desc': '50 points'},
         {'type': 'points', 'points': 100, 'quantity': 5000, 'category': '5L', 'desc': '100 points'},
         # Try Again
-        {'type': 'try_again', 'points': 0, 'quantity': 4500, 'category': '1.5L', 'desc': 'Try Again'},
+        {'type': 'try_again', 'points': 0, 'quantity': 4500, 'category': '0.5L', 'desc': 'Try Again'},
         # Special
-        {'type': 'loyalty_bonus', 'points': 0, 'quantity': 500, 'category': 'bedon', 'desc': 'Loyalty Bonus'},
+        {'type': 'loyalty_bonus', 'points': 0, 'quantity': 500, 'category': '3L', 'desc': 'Loyalty Bonus'},
     ]
     
     total_generated = 0
@@ -799,7 +799,7 @@ def generate_batch_qr_codes(request):
             
             # MODE PERSONNALISÉ : Configuration manuelle
             total_qr_codes = int(request.POST.get('total_qr_codes', 50000))
-            category = request.POST.get('category', '1.5L')
+            category = request.POST.get('category', '0.5L')
             prize_type = request.POST.get('prize_type', 'points')
             
             # Déterminer les points ou le type spécial

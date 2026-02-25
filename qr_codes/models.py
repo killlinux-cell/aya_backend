@@ -19,9 +19,10 @@ class QRCode(models.Model):
     ]
     
     CATEGORY_CHOICES = [
-        ('1.5L', 'Bouteille 1.5 L'),
+        ('0.5L', 'Bouteille 0,5 L'),
+        ('0.9L', 'Bouteille 0,9 L'),
+        ('3L', 'Bouteille 3 L'),
         ('5L', 'Bouteille 5 L'),
-        ('bedon', 'Bedon'),
     ]
     
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -29,7 +30,7 @@ class QRCode(models.Model):
     points = models.IntegerField()
     description = models.TextField(max_length=500)
     prize_type = models.CharField(max_length=20, choices=PRIZE_TYPES, default='points')
-    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='1.5L', help_text="Catégorie de la bouteille")
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='0.5L', help_text="Catégorie de la bouteille")
     is_active = models.BooleanField(default=True)
     expires_at = models.DateTimeField(null=True, blank=True)
     

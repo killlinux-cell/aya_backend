@@ -127,9 +127,9 @@
                     </div>
                     
                     <!-- Carte de prévisualisation -->
-                    <div class="mb-3" id="mapPreview" style="display: none;">
+                    <div class="mb-3" id="mapPreview" style="display: none; position: relative; z-index: 1;">
                         <label class="form-label">Prévisualisation de la position</label>
-                        <div id="miniMap" style="height: 200px; border-radius: 8px; border: 1px solid #ddd;"></div>
+                        <div id="miniMap" style="height: 150px; max-height: 150px; border-radius: 8px; border: 1px solid #ddd; overflow: hidden;"></div>
                         <small class="form-text text-muted">Carte de prévisualisation de la position du vendeur</small>
                     </div>
 
@@ -149,7 +149,7 @@
                         </ul>
                     </div>
 
-                    <div class="d-flex justify-content-end gap-2">
+                    <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top" style="position: relative; z-index: 1000;">
                         <a href="{% url 'dashboard:vendors' %}" class="btn btn-secondary">
                             <i class="fas fa-times"></i> Annuler
                         </a>

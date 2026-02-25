@@ -221,20 +221,25 @@
                         <div class="mb-4">
                             <h6 class="mb-3"><i class="fas fa-bottle-water text-primary"></i> Catégorie *</h6>
                             
-                            <div class="btn-group w-100" role="group" aria-label="Category selection">
-                                <input type="radio" class="btn-check" name="category" id="category_1_5L" value="1.5L" checked>
-                                <label class="btn btn-outline-primary" for="category_1_5L">
-                                    <i class="fas fa-bottle-water"></i> Bouteille 1.5 L
+                            <div class="btn-group w-100 flex-wrap" role="group" aria-label="Category selection">
+                                <input type="radio" class="btn-check" name="category" id="category_0_5L" value="0.5L" checked>
+                                <label class="btn btn-outline-primary" for="category_0_5L">
+                                    <i class="fas fa-bottle-water"></i> 0,5 L
+                                </label>
+
+                                <input type="radio" class="btn-check" name="category" id="category_0_9L" value="0.9L">
+                                <label class="btn btn-outline-primary" for="category_0_9L">
+                                    <i class="fas fa-bottle-water"></i> 0,9 L
+                                </label>
+
+                                <input type="radio" class="btn-check" name="category" id="category_3L" value="3L">
+                                <label class="btn btn-outline-primary" for="category_3L">
+                                    <i class="fas fa-wine-bottle"></i> 3 L
                                 </label>
 
                                 <input type="radio" class="btn-check" name="category" id="category_5L" value="5L">
                                 <label class="btn btn-outline-primary" for="category_5L">
-                                    <i class="fas fa-wine-bottle"></i> Bouteille 5 L
-                                </label>
-
-                                <input type="radio" class="btn-check" name="category" id="category_bedon" value="bedon">
-                                <label class="btn btn-outline-primary" for="category_bedon">
-                                    <i class="fas fa-drum"></i> Bedon
+                                    <i class="fas fa-wine-bottle"></i> 5 L
                                 </label>
                             </div>
                         </div>
@@ -359,7 +364,7 @@
                         </div>
                         <div class="stats-item">
                             <span>Catégorie</span>
-                            <span class="type-badge" id="summary_category">1.5 L</span>
+                            <span class="type-badge" id="summary_category">0,5 L</span>
                         </div>
                         <div class="stats-item">
                             <span>Type</span>
@@ -389,7 +394,7 @@
                         </h6>
                         
                         <p class="small mb-2">
-                            <strong>Category :</strong> Définit la taille de la bouteille (1.5L, 5L, Bedon)
+                            <strong>Category :</strong> Définit la taille de la bouteille (0,5L, 0,9L, 3L, 5L)
                         </p>
                         <p class="small mb-2">
                             <strong>Type Points :</strong> QR codes gagnants avec points
@@ -411,11 +416,11 @@
                             <strong>Lot 4151000</strong> (50 000 QR) :
                         </p>
                         <ul class="small mb-0">
-                            <li>25 000 × 10 points (1.5L)</li>
-                            <li>15 000 × 50 points (1.5L)</li>
+                            <li>25 000 × 10 points (0,5L)</li>
+                            <li>15 000 × 50 points (0,9L)</li>
                             <li>5 000 × 100 points (5L)</li>
-                            <li>4 000 × Try Again (1.5L)</li>
-                            <li>500 × Loyalty Bonus (Bedon)</li>
+                            <li>4 000 × Try Again (0,5L)</li>
+                            <li>500 × Loyalty Bonus (3L)</li>
                             <li>500 × Mystery Box (5L)</li>
                         </ul>
                     </div>
@@ -479,7 +484,7 @@ function updateSummary() {
     
     // Category
     const categoryRadio = document.querySelector('input[name="category"]:checked');
-    const categoryLabel = categoryRadio ? categoryRadio.nextElementSibling.textContent.trim() : '1.5 L';
+    const categoryLabel = categoryRadio ? categoryRadio.nextElementSibling.textContent.trim() : '0,5 L';
     document.getElementById('summary_category').textContent = categoryLabel.replace('Bouteille ', '').replace('🍾 ', '').replace('🥁 ', '');
     
     // Type
